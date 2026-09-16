@@ -10,7 +10,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import Toast from 'react-native-toast-message';
-import { Image } from 'expo-image';
+import { Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { C } from '@/constants/colors';
 import { Screen } from '@/components/Screen';
@@ -270,8 +270,7 @@ export default function AddFoodPage() {
                 className="w-full h-52 rounded-3xl mb-4"
                 style={{ backgroundColor: C.field }}
                 source={{ uri: imageUri }}
-                contentFit="cover"
-                cachePolicy="none"
+                resizeMode="cover"
               />
             ) : (
               <View className="w-full h-52 rounded-3xl overflow-hidden">
@@ -554,9 +553,8 @@ function EditableItemCard({
         <Image
           className="w-full h-28 rounded-2xl mb-4"
           source={{ uri: imageUri }}
-          contentFit="cover"
+          resizeMode="cover"
           style={{ backgroundColor: C.field }}
-          cachePolicy="none"
         />
       ) : null}
 
