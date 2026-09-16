@@ -223,10 +223,10 @@ export default function OnboardingPage() {
               className="mt-6 rounded-3xl p-5"
               style={{ backgroundColor: C.primary, ...shadow() }}
             >
-              <Text className="text-sm font-semibold text-white/80">每日推荐摄入</Text>
+              <Text className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>每日推荐摄入</Text>
               <View className="flex-row items-end mt-1">
                 <Text className="text-4xl font-extrabold text-white">{preview.calories}</Text>
-                <Text className="text-sm text-white/80 mb-1.5 ml-2">kcal / 天</Text>
+                <Text className="text-sm mb-1.5 ml-2" style={{ color: 'rgba(255,255,255,0.8)' }}>kcal / 天</Text>
               </View>
               <View className="flex-row justify-between mt-4">
                 {[
@@ -236,7 +236,7 @@ export default function OnboardingPage() {
                 ].map((m) => (
                   <View key={m.k} className="items-center">
                     <Text className="text-lg font-bold text-white">{m.v}g</Text>
-                    <Text className="text-[11px] text-white/80">{m.k}</Text>
+                    <Text className="text-[11px]" style={{ color: 'rgba(255,255,255,0.8)' }}>{m.k}</Text>
                   </View>
                 ))}
               </View>

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import foodRouter from "./routes/food";
 
 const app = express();
 const port = process.env.PORT || 9091;
@@ -13,6 +14,8 @@ app.get('/api/v1/health', (req, res) => {
   console.log('Health check success');
   res.status(200).json({ status: 'ok' });
 });
+
+app.use('/api/v1/food', foodRouter);
 
 
 app.listen(port, () => {

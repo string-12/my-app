@@ -270,27 +270,31 @@ import { Screen } from '../../../components/Screen';
 
 - **目标设定（onboarding）**：选择「减脂 / 保持 / 增重」目标，填写性别、身高、体重、年龄、活动量，实时预览并保存每日热量与三大营养素推荐摄入（Mifflin-St Jeor 公式）。
 - **饮食记录（add-food）**：
-  - **拍照识别**：拍摄或从相册选择食物照片 → 点击「AI 识别营养成分」→ 填充可编辑的营养数据后保存。
-  - **手动输入**：填写食物名称、分量、热量及三大营养素后保存。
+  - **拍照识别**：拍摄或从相册选择食物照片 → 点击「AI 识别营养成分」→ 后端视觉大模型返回食物名称、分量与营养成分，可在保存前微调。
+  - **手动输入**：填写食物名称与分量后，AI 会自动估算热量与三大营养素；也支持手动修改任意数值。
 - **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；下方展示今日记录列表，支持删除单条。
-- **本地持久化**：目标与记录均存入 AsyncStorage，无需后端，重启不丢失。
+- **本地持久化**：用户目标与饮食记录均存入 AsyncStorage，无需后端数据库，重启不丢失。
 
 ### 技术说明
 
-- **AI 识别为模拟实现**：`client/screens/add-food/aiFoodRecognition.ts` 中的 `analyzeFoodImage` 当前为占位逻辑（内置食物库随机返回）。替换为真实模型 API 时，仅需改造该函数（上传图片 → 调用视觉大模型 → 返回结构化营养数据），文件内有详细接入点说明。
-- **依赖技术栈**：React Native / Expo 54、Expo Router（Stack 导航）、AsyncStorage、react-native-svg、expo-image-picker、expo-haptics、tailwindcss(uniwind)。
+- **AI 识别已接入真实多模态大模型**：后端 `server/src/routes/food.ts` 提供 `/api/v1/food/analyze`（图片识别）与 `/api/v1/food/estimate`（名称+重量估算）两个接口，分别调用支持图像输入的 LLM，返回结构化营养数据。
+- **前端接入点**：`client/screens/add-food/aiFoodRecognition.ts` 负责图片 FormData 上传与文本估算请求。后续若需切换模型或增加缓存，只需修改后端路由与此前端文件。
+- **依赖技术栈**：React Native / Expo 54、Expo Router（Stack 导航）、AsyncStorage、react-native-svg、expo-image-picker、expo-haptics、tailwindcss(uniwind)、coze-coding-dev-sdk（后端 LLM SDK）。
 
 ### 本地预览（Expo Go）
 
-> 本项目为**纯前端本地应用**，无需启动后端服务即可体验完整功能。
+> AI 识别需要后端服务在线；用户数据仍保存在本地 AsyncStorage。
 
-1. 安装依赖：
+1. 安装依赖（根目录已配置 pnpm workspace，一次安装即可）：
    ```bash
-   cd client && pnpm install
+   pnpm install
    ```
-2. 启动 Expo 开发服务器：
+2. 启动前后端开发服务：
    ```bash
-   cd client && npx expo start
+   cd /workspace/projects && coze dev
+   # 或分别启动：
+   # cd server && pnpm run dev
+   # cd client && npx expo start
    ```
 3. 手机安装 **Expo Go**（Android / iOS 应用商店均可下载），确保手机与电脑在同一局域网。
 4. 用 Expo Go 扫描终端显示的 **QR 码**，即可在手机上打开并体验 App。

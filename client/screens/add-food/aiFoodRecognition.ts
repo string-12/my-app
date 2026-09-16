@@ -1,55 +1,69 @@
-/**
- * AI 食物识别模块（模拟实现版）
- *
- * ⚠️ 当前为占位逻辑：随机从内置食物库中挑出一个"识别结果"，用于串联完整交互闭环。
- *
- * ─────────────────────────────────────────────────────────────
- * 🔌 真实模型接入点（替换 analyze 函数内部即可）
- * 1. 将 imageUri 通过 FormData 上传到后端：
- *    - 前端：new FormData() → { uri, name, type } → fetch(`/api/v1/food/analyze`, POST)
- *    - 后端：multer 接收 buffer → 调用视觉大模型（如豆包/DeepSeek-VL）
- *      → 返回结构化营养数据：{ name, amountGram, calories, protein, carbs, fat, confidence }
- * 2. 将下方 `MOCK_RESULT` 及随机逻辑整体替换为真实接口响应即可。
- *    - 接口文档参考：《第八部分 集成服务使用协议》
- * ─────────────────────────────────────────────────────────────
- */
+import { createFormDataFile } from '@/utils';
 
+/**
+ * AI 食物识别结果。
+ * 后端 /api/v1/food/analyze 与 /api/v1/food/estimate 均返回此结构。
+ */
 export interface RecognizedFood {
   name: string;
   amountGram: number;
   calories: number;
-  protein: number; // g
-  carbs: number; // g
-  fat: number; // g
-  confidence: number; // 0-1
+  protein: number;
+  carbs: number;
+  fat: number;
+  confidence: number;
 }
 
-/** 内置示例食物库（仅用于演示占位） */
-const MOCK_DB: Omit<RecognizedFood, 'confidence'>[] = [
-  { name: '香煎鸡胸肉', amountGram: 150, calories: 198, protein: 31, carbs: 0, fat: 7 },
-  { name: '糙米饭', amountGram: 200, calories: 222, protein: 5, carbs: 46, fat: 2 },
-  { name: '牛油果沙拉', amountGram: 220, calories: 265, protein: 4, carbs: 18, fat: 21 },
-  { name: '全麦吐司', amountGram: 60, calories: 159, protein: 6, carbs: 27, fat: 3 },
-  { name: '拿铁咖啡', amountGram: 350, calories: 148, protein: 8, carbs: 12, fat: 8 },
-  { name: '三文鱼刺身', amountGram: 120, calories: 208, protein: 24, carbs: 0, fat: 12 },
-  { name: '希腊酸奶', amountGram: 150, calories: 99, protein: 14, carbs: 8, fat: 1 },
-  { name: '清炒西兰花', amountGram: 180, calories: 66, protein: 4, carbs: 11, fat: 1 },
-];
-
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const API_BASE = process.env.EXPO_PUBLIC_BACKEND_BASE_URL;
 
 /**
- * 识别食物照片，返回营养成分估算结果。
- * @param imageUri 本地图片 uri（真实版：传给后端用于视觉识别）
+ * 通过多模态 LLM 识别图片中的食物并估算营养成分。
+ * 真实调用后端 /api/v1/food/analyze（multer 接收 image 字段）。
  */
 export async function analyzeFoodImage(imageUri: string): Promise<RecognizedFood> {
-  // 模拟网络/识别延迟，给用户以"AI 分析中"的反馈节奏
-  await delay(1400);
+  if (!API_BASE) {
+    throw new Error('未配置后端地址（EXPO_PUBLIC_BACKEND_BASE_URL）');
+  }
 
-  // ➡️ 替换点：realResult = await realVisionApi(imageUri)
-  const random = MOCK_DB[Math.floor(Math.random() * MOCK_DB.length)];
-  return {
-    ...random,
-    confidence: Number((0.72 + Math.random() * 0.25).toFixed(2)),
-  };
+  const file = await createFormDataFile(imageUri, 'food.jpg', 'image/jpeg');
+  const formData = new FormData();
+  formData.append('image', file as unknown as Blob);
+
+  const response = await fetch(`${API_BASE}/api/v1/food/analyze`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `识别失败 (${response.status})`);
+  }
+
+  return response.json();
+}
+
+/**
+ * 根据食物名称与重量，由 LLM 估算营养成分。
+ * 真实调用后端 /api/v1/food/estimate。
+ */
+export async function estimateFoodNutrition(
+  name: string,
+  amountGram: number
+): Promise<RecognizedFood> {
+  if (!API_BASE) {
+    throw new Error('未配置后端地址（EXPO_PUBLIC_BACKEND_BASE_URL）');
+  }
+
+  const response = await fetch(`${API_BASE}/api/v1/food/estimate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, amountGram }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `估算失败 (${response.status})`);
+  }
+
+  return response.json();
 }

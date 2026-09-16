@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { C } from '@/constants/colors';
 import { Screen } from '@/components/Screen';
 import {
   analyzeFoodImage,
+  estimateFoodNutrition,
   RecognizedFood,
 } from '@/screens/add-food/aiFoodRecognition';
 import { addRecord, dayKey, FoodSource } from '@/utils/storage';
@@ -42,8 +43,35 @@ export default function AddFoodPage() {
   const [mProtein, setMProtein] = useState('');
   const [mCarbs, setMCarbs] = useState('');
   const [mFat, setMFat] = useState('');
+  const [manualEstimating, setManualEstimating] = useState(false);
 
   const [saving, setSaving] = useState(false);
+
+  // 手动输入：输入名称和重量后自动调用 AI 估算营养成分
+  useEffect(() => {
+    const name = mName.trim();
+    const grams = Number(mAmount);
+    if (!name || !grams || grams <= 0) return;
+    if (mCal || mProtein || mCarbs || mFat) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setManualEstimating(true);
+        const res = await estimateFoodNutrition(name, grams);
+        setMCal(String(res.calories));
+        setMProtein(String(res.protein));
+        setMCarbs(String(res.carbs));
+        setMFat(String(res.fat));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        // 估算失败时保持空白，由用户手动填写
+      } finally {
+        setManualEstimating(false);
+      }
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [mName, mAmount, mCal, mProtein, mCarbs, mFat]);
 
   /** 选择图片来源（拍照 / 相册） */
   const pickImage = async (fromCamera: boolean) => {
@@ -263,6 +291,20 @@ export default function AddFoodPage() {
           <View>
             <Field label="食物名称 *" value={mName} onChange={setMName} placeholder="如：香煎鸡胸肉" />
             <Field label="分量 (克)" value={mAmount} onChange={(t) => setMAmount(num(t))} placeholder="150" />
+
+            {manualEstimating ? (
+              <View className="flex-row items-center mb-4">
+                <ActivityIndicator size="small" color={C.primary} />
+                <Text className="ml-2 text-sm" style={{ color: C.muted }}>
+                  AI 正在根据名称和重量估算营养…
+                </Text>
+              </View>
+            ) : (
+              <Text className="mb-4 text-xs" style={{ color: C.muted }}>
+                输入食物名称和重量后，AI 会自动估算热量与三大营养素，你也可手动修改。
+              </Text>
+            )}
+
             <Field label="热量 (kcal) *" value={mCal} onChange={(t) => setMCal(num(t))} placeholder="200" />
             <Field label="蛋白质 (g)" value={mProtein} onChange={(t) => setMProtein(num(t))} placeholder="20" />
             <Field label="碳水化合物 (g)" value={mCarbs} onChange={(t) => setMCarbs(num(t))} placeholder="30" />
