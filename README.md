@@ -325,3 +325,71 @@ client/
 ├── utils/                  # calc.ts(热量计算) / storage.ts(AsyncStorage)
 └── constants/colors.ts     # 健康翡翠配色 tokens
 ```
+
+---
+
+## 打包成可安装的 Android APK
+
+> 当前项目已配置好 EAS Build（Expo Application Services），可云端编译出直接在手机上安装的 APK。
+> AI 识别依赖后端服务，打包前请确认 `EXPO_PUBLIC_BACKEND_BASE_URL` 指向一个手机可访问的地址（局域网 IP、服务器域名均可）。
+
+### 1. 准备 Expo 账号
+
+- 前往 [https://expo.dev/signup](https://expo.dev/signup) 注册免费账号。
+- 在本地登录：
+  ```bash
+  npx eas login
+  ```
+
+### 2. 配置后端地址（重要）
+
+EAS 构建时会读取 `EXPO_PUBLIC_BACKEND_BASE_URL`，把它写入应用。可以在构建命令前临时设置，也可以在 `eas.json` 的 `env` 里写死：
+
+```bash
+# 方式一：命令行传入（推荐，灵活切换环境）
+EXPO_PUBLIC_BACKEND_BASE_URL=https://你的后端地址 npx eas build -p android --profile preview
+
+# 方式二：修改 eas.json 的 preview.env（适合固定服务器）
+```
+
+若只想在本地局域网测试，把电脑和手机连到同一 Wi-Fi，填入电脑的内网 IP：
+
+```bash
+EXPO_PUBLIC_BACKEND_BASE_URL=http://192.168.x.x:9091 npx eas build -p android --profile preview
+```
+
+> 注意：不要把 `localhost` 或 `127.0.0.1` 填进去，手机无法访问。
+
+### 3. 构建 APK
+
+```bash
+cd /workspace/projects/client
+npx eas build -p android --profile preview
+```
+
+- `--profile preview` 会使用 `eas.json` 中的 `preview` 配置，输出 **APK** 文件并开启内部测试分发。
+- 第一次构建时，EAS 会询问是否创建项目，选择「是」即可。
+- 构建完成后，EAS 会返回一个下载链接，点击链接即可下载 APK 到手机安装。
+- 也可以在 Expo 网页控制台 [https://expo.dev/accounts/你的账号/projects](https://expo.dev/accounts/你的账号/projects) 查看构建记录并下载。
+
+### 4. 安装到手机
+
+- 下载 APK 后，在 Android 手机上点击安装。
+- 若系统提示「未知来源应用」，请在设置中允许浏览器/文件管理器安装未知应用。
+- 打开 App，按引导设定目标后即可使用。
+
+### 5. 后续更新
+
+代码修改后，再次执行：
+
+```bash
+cd /workspace/projects/client
+EXPO_PUBLIC_BACKEND_BASE_URL=https://你的后端地址 npx eas build -p android --profile preview
+```
+
+即可生成新版本 APK。
+
+### 相关配置文件
+
+- `client/eas.json`：EAS Build 配置，已包含 `preview`（APK）和 `production`（AAB）两种构建配置。
+- `client/app.config.ts`：Expo 应用配置，已自动注入 `COZE_PROJECT_ID` 作为 EAS 项目 ID。

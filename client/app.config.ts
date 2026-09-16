@@ -15,6 +15,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      ...config.extra,
+      "eas": {
+        "projectId": projectId
+      }
+    },
     "ios": {
       "supportsTablet": true
     },
