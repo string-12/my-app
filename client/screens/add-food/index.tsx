@@ -1,0 +1,419 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Haptics from 'expo-haptics';
+import Toast from 'react-native-toast-message';
+import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
+import { C } from '@/constants/colors';
+import { Screen } from '@/components/Screen';
+import {
+  analyzeFoodImage,
+  RecognizedFood,
+} from '@/screens/add-food/aiFoodRecognition';
+import { addRecord, dayKey, FoodSource } from '@/utils/storage';
+import { useSafeRouter } from '@/hooks/useSafeRouter';
+
+type Tab = 'photo' | 'manual';
+
+const inputClass = 'rounded-2xl px-4 py-3 text-base font-semibold';
+const inputStyle = { backgroundColor: C.field, color: C.text } as const;
+
+export default function AddFoodPage() {
+  const router = useSafeRouter();
+  const [tab, setTab] = useState<Tab>('photo');
+
+  // 拍照识别状态
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [bio, setBio] = useState<RecognizedFood | null>(null);
+
+  // 手动输入状态
+  const [mName, setMName] = useState('');
+  const [mAmount, setMAmount] = useState('');
+  const [mCal, setMCal] = useState('');
+  const [mProtein, setMProtein] = useState('');
+  const [mCarbs, setMCarbs] = useState('');
+  const [mFat, setMFat] = useState('');
+
+  const [saving, setSaving] = useState(false);
+
+  /** 选择图片来源（拍照 / 相册） */
+  const pickImage = async (fromCamera: boolean) => {
+    setBio(null);
+    setImageUri(null);
+    try {
+      let result: ImagePicker.ImagePickerResult;
+      if (fromCamera) {
+        const perm = await ImagePicker.requestCameraPermissionsAsync();
+        if (!perm.granted) {
+          Toast.show({ type: 'error', text1: '需要相机权限才能拍摄' });
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: false,
+          quality: 0.8,
+        });
+      } else {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Toast.show({ type: 'error', text1: '需要相册权限才能选择' });
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: false,
+          quality: 0.8,
+        });
+      }
+      if (!result.canceled && result.assets[0]) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (e) {
+      Toast.show({ type: 'error', text1: '选择图片失败，请重试' });
+    }
+  };
+
+  /** 触发 AI 识别 */
+  const runAnalyze = async () => {
+    if (!imageUri) return;
+    setAnalyzing(true);
+    setBio(null);
+    try {
+      // 🔌 接入点：真实模型 API（见 aiFoodRecognition.ts）
+      const res = await analyzeFoodImage(imageUri);
+      setBio(res);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      Toast.show({ type: 'error', text1: '识别失败，请重试或手动输入' });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const saveRecord = async (payload: {
+    name: string;
+    amountGram: number;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    source: FoodSource;
+  }) => {
+    const { name, calories } = payload;
+    if (!name.trim() || !calories || calories <= 0) {
+      Toast.show({ type: 'error', text1: '请至少填写食物名称与热量' });
+      return false;
+    }
+    setSaving(true);
+    await addRecord({ ...payload, day: dayKey(), imageUri: imageUri ?? undefined });
+    setSaving(false);
+    Toast.show({ type: 'success', text1: '记录已保存' });
+    router.back();
+    return true;
+  };
+
+  /** 手动输入保存 */
+  const handleManualSave = () => {
+    saveRecord({
+      name: mName,
+      amountGram: Number(mAmount) || 0,
+      calories: Number(mCal) || 0,
+      protein: Number(mProtein) || 0,
+      carbs: Number(mCarbs) || 0,
+      fat: Number(mFat) || 0,
+      source: 'manual',
+    });
+  };
+
+  /** AI 结果保存（使用编辑后的字段） */
+  const handleBioSave = (fields: {
+    name: string;
+    amountGram: number;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }) => {
+    saveRecord({ ...fields, source: 'photo-ai' });
+  };
+
+  return (
+    <Screen statusBarStyle="dark" safeAreaEdges={['top', 'left', 'right']}>
+      {/* 顶部标题 */}
+      <View className="px-5 pt-2 pb-3">
+        <Text className="text-[26px] font-extrabold" style={{ color: C.primaryDark }}>
+          记录一餐
+        </Text>
+      </View>
+
+      {/* 分段切换 */}
+      <View className="mx-5 mb-4 rounded-2xl p-1 flex-row" style={{ backgroundColor: C.field }}>
+        {(
+          [
+            { k: 'photo' as Tab, l: '拍照识别' },
+            { k: 'manual' as Tab, l: '手动输入' },
+          ] as { k: Tab; l: string }[]
+        ).map((t) => {
+          const active = tab === t.k;
+          return (
+            <TouchableOpacity
+              key={t.k}
+              className="flex-1 py-2.5 rounded-xl items-center"
+              style={{ backgroundColor: active ? '#fff' : 'transparent', ...shadow() }}
+              onPress={() => setTab(t.k)}
+            >
+              <Text className="text-sm font-bold" style={{ color: active ? C.primaryDark : C.muted }}>
+                {t.l}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingTop: 4, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {tab === 'photo' ? (
+          <View>
+            {/* 图片选择区 */}
+            {imageUri ? (
+              <Image
+                className="w-full h-52 rounded-3xl mb-4"
+                style={{ backgroundColor: C.field }}
+                source={imageUri}
+                contentFit="cover"
+              />
+            ) : (
+              <View className="w-full h-52 rounded-3xl overflow-hidden">
+                <TouchableOpacity
+                  className="flex-1 items-center justify-center"
+                  style={{ backgroundColor: C.field }}
+                  onPress={() => pickImage(false)}
+                >
+                  <Ionicons name="camera-outline" size={40} color={C.muted} />
+                  <Text className="mt-2 text-sm font-semibold" style={{ color: C.text }}>
+                    点击选择食物照片
+                  </Text>
+                  <Text className="mt-1 text-xs" style={{ color: C.muted }}>
+                    从相册选择或拍摄
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* 操作按钮 */}
+            <View className="flex-row gap-3 mb-5">
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center rounded-2xl py-3.5"
+                style={{ backgroundColor: C.surface, ...shadow() }}
+                onPress={() => pickImage(false)}
+              >
+                <Ionicons name="images-outline" size={18} color={C.primaryDark} />
+                <Text className="ml-2 text-sm font-bold" style={{ color: C.primaryDark }}>
+                  相册
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-1 flex-row items-center justify-center rounded-2xl py-3.5"
+                style={{ backgroundColor: C.surface, ...shadow() }}
+                onPress={() => pickImage(true)}
+              >
+                <Ionicons name="camera" size={18} color={C.primaryDark} />
+                <Text className="ml-2 text-sm font-bold" style={{ color: C.primaryDark }}>
+                  拍照
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* AI 识别按钮 */}
+            {imageUri && !bio ? (
+              <TouchableOpacity
+                className="rounded-2xl py-4 items-center flex-row justify-center"
+                style={{ backgroundColor: C.primary, ...shadow() }}
+                onPress={runAnalyze}
+                disabled={analyzing}
+              >
+                {analyzing ? (
+                  <>
+                    <ActivityIndicator color="#fff" size="small" />
+                    <Text className="ml-2.5 text-base font-bold text-white">AI 正在识别营养成分…</Text>
+                  </>
+                ) : (
+                  <Text className="text-base font-bold text-white">
+                    AI 识别营养成分
+                  </Text>
+                )}
+              </TouchableOpacity>
+            ) : null}
+
+            {/* 识别结果（可编辑） */}
+            {bio ? <ResultForm bio={bio} saving={saving} onSave={handleBioSave} /> : null}
+          </View>
+        ) : (
+          <View>
+            <Field label="食物名称 *" value={mName} onChange={setMName} placeholder="如：香煎鸡胸肉" />
+            <Field label="分量 (克)" value={mAmount} onChange={(t) => setMAmount(num(t))} placeholder="150" />
+            <Field label="热量 (kcal) *" value={mCal} onChange={(t) => setMCal(num(t))} placeholder="200" />
+            <Field label="蛋白质 (g)" value={mProtein} onChange={(t) => setMProtein(num(t))} placeholder="20" />
+            <Field label="碳水化合物 (g)" value={mCarbs} onChange={(t) => setMCarbs(num(t))} placeholder="30" />
+            <Field label="脂肪 (g)" value={mFat} onChange={(t) => setMFat(num(t))} placeholder="8" />
+
+            <TouchableOpacity
+              className="mt-6 rounded-2xl py-4 items-center"
+              style={{ backgroundColor: C.primaryDark, ...shadow() }}
+              onPress={handleManualSave}
+              disabled={saving}
+            >
+              <Text className="text-base font-bold text-white">保存记录</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </Screen>
+  );
+}
+
+const num = (t: string) => t.replace(/[^0-9.]/g, '');
+
+/** AI 识别结果编辑表单 */
+function ResultForm({
+  bio,
+  saving,
+  onSave,
+}: {
+  bio: RecognizedFood;
+  saving: boolean;
+  onSave: (fields: {
+    name: string;
+    amountGram: number;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+  }) => void;
+}) {
+  const [name, setName] = useState(bio.name);
+  const [amount, setAmount] = useState(String(bio.amountGram));
+  const [cal, setCal] = useState(String(bio.calories));
+  const [protein, setProtein] = useState(String(bio.protein));
+  const [carbs, setCarbs] = useState(String(bio.carbs));
+  const [fat, setFat] = useState(String(bio.fat));
+
+  return (
+    <View className="mt-5 rounded-3xl p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
+      <View className="flex-row items-center justify-between mb-1">
+        <Text className="text-base font-bold" style={{ color: C.primaryDark }}>
+          识别结果
+        </Text>
+        <Text className="text-xs font-bold px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }}>
+          可信度 {(bio.confidence * 100).toFixed(0)}%
+        </Text>
+      </View>
+      <Text className="text-xs mb-4" style={{ color: C.muted }}>
+        下方数据可手动微调后保存
+      </Text>
+
+      <Field label="食物名称 *" value={name} onChange={setName} />
+      <RowFields
+        left={{ label: '分量 (克)', value: amount, onChange: (t) => setAmount(num(t)) }}
+        right={{ label: '热量 (kcal) *', value: cal, onChange: (t) => setCal(num(t)) }}
+      />
+      <RowFields
+        left={{ label: '蛋白质 (g)', value: protein, onChange: (t) => setProtein(num(t)) }}
+        right={{ label: '碳水 (g)', value: carbs, onChange: (t) => setCarbs(num(t)) }}
+      />
+      <Field label="脂肪 (g)" value={fat} onChange={(t) => setFat(num(t))} />
+
+      <TouchableOpacity
+        className="mt-4 rounded-2xl py-4 items-center"
+        style={{ backgroundColor: C.primary, ...shadow() }}
+        onPress={() =>
+          onSave({
+            name,
+            amountGram: Number(amount) || 0,
+            calories: Number(cal) || 0,
+            protein: Number(protein) || 0,
+            carbs: Number(carbs) || 0,
+            fat: Number(fat) || 0,
+          })
+        }
+        disabled={saving}
+      >
+        <Text className="text-base font-bold text-white">保存这条识别</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (t: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <View className="mb-4">
+      <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+        {label}
+      </Text>
+      <TextInput
+        className={inputClass}
+        style={inputStyle}
+        value={value}
+        onChangeText={onChange}
+        placeholder={placeholder}
+        placeholderTextColor="#9FABA5"
+      />
+    </View>
+  );
+}
+
+function RowFields({
+  left,
+  right,
+}: {
+  left: { label: string; value: string; onChange: (t: string) => void };
+  right: { label: string; value: string; onChange: (t: string) => void };
+}) {
+  return (
+    <View className="flex-row gap-3 mb-4">
+      <View className="flex-1">
+        <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+          {left.label}
+        </Text>
+        <TextInput className={inputClass} style={inputStyle} value={left.value} onChangeText={left.onChange} />
+      </View>
+      <View className="flex-1">
+        <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+          {right.label}
+        </Text>
+        <TextInput className={inputClass} style={inputStyle} value={right.value} onChangeText={right.onChange} />
+      </View>
+    </View>
+  );
+}
+
+function shadow() {
+  return {
+    shadowColor: C.shadow,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 12,
+    elevation: 4,
+  };
+}

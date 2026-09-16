@@ -259,3 +259,58 @@ import { Screen } from '../../../components/Screen';
 ## 本地开发
 
 `coze-dev dev`：用来首次启动前后端服务，也可以用来重启前后端服务（该命令会先尝试杀掉占用端口的进程，再启动服务）
+
+---
+
+## 每日摄入营养素游戏化记录工具（本仓库当前应用）
+
+一款安卓端营养记录 App：设定目标 → 拍照 AI 识别或手动录入食物 → 以游戏化仪表盘查看每日热量与三大营养素进度。
+
+### 功能一览
+
+- **目标设定（onboarding）**：选择「减脂 / 保持 / 增重」目标，填写性别、身高、体重、年龄、活动量，实时预览并保存每日热量与三大营养素推荐摄入（Mifflin-St Jeor 公式）。
+- **饮食记录（add-food）**：
+  - **拍照识别**：拍摄或从相册选择食物照片 → 点击「AI 识别营养成分」→ 填充可编辑的营养数据后保存。
+  - **手动输入**：填写食物名称、分量、热量及三大营养素后保存。
+- **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；下方展示今日记录列表，支持删除单条。
+- **本地持久化**：目标与记录均存入 AsyncStorage，无需后端，重启不丢失。
+
+### 技术说明
+
+- **AI 识别为模拟实现**：`client/screens/add-food/aiFoodRecognition.ts` 中的 `analyzeFoodImage` 当前为占位逻辑（内置食物库随机返回）。替换为真实模型 API 时，仅需改造该函数（上传图片 → 调用视觉大模型 → 返回结构化营养数据），文件内有详细接入点说明。
+- **依赖技术栈**：React Native / Expo 54、Expo Router（Stack 导航）、AsyncStorage、react-native-svg、expo-image-picker、expo-haptics、tailwindcss(uniwind)。
+
+### 本地预览（Expo Go）
+
+> 本项目为**纯前端本地应用**，无需启动后端服务即可体验完整功能。
+
+1. 安装依赖：
+   ```bash
+   cd client && pnpm install
+   ```
+2. 启动 Expo 开发服务器：
+   ```bash
+   cd client && npx expo start
+   ```
+3. 手机安装 **Expo Go**（Android / iOS 应用商店均可下载），确保手机与电脑在同一局域网。
+4. 用 Expo Go 扫描终端显示的 **QR 码**，即可在手机上打开并体验 App。
+   - 也支持 Web 预览：按终端提示按 `w`，或访问 `http://localhost:5000`。
+5. 首次进入会引导设定目标；之后可在首页右下角「＋」按钮记录一餐。
+
+### 目录结构（核心）
+
+```
+client/
+├── app/                    # 路由配置（仅 re-export）
+│   ├── _layout.tsx         # Stack 根布局
+│   ├── index.tsx           # 首页 = 每日进度仪表盘
+│   ├── add-food.tsx        # 记录一餐
+│   └── onboarding.tsx      # 目标设定
+├── screens/
+│   ├── home/               # 仪表盘页面
+│   ├── add-food/           # 记录页面 + aiFoodRecognition.ts（AI 识别接入点）
+│   └── onboarding/         # 目标设定页面
+├── components/             # Screen / ProgressRing / MacroBar
+├── utils/                  # calc.ts(热量计算) / storage.ts(AsyncStorage)
+└── constants/colors.ts     # 健康翡翠配色 tokens
+```

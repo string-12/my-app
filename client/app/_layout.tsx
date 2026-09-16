@@ -23,6 +23,8 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ title: "" }} />
+        <Stack.Screen name="add-food" options={{ title: "记录一餐" }} />
+        <Stack.Screen name="onboarding" options={{ title: "设定目标" }} />
       </Stack>
       <Toast />
     </Provider>
