@@ -20,7 +20,7 @@ export default function MacroBar({ label, color, value, target, emoji }: Props) 
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-row items-center">
           {emoji ? <Text className="mr-1.5 text-sm">{emoji}</Text> : null}
-          <Text className="text-sm font-semibold" style={{ color: C.text }}>
+          <Text className="text-sm px-1" style={{ color: C.text }} allowFontScaling={false}>
             {label}
           </Text>
         </View>

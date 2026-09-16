@@ -98,7 +98,7 @@ export default function HomePage() {
             <Ionicons name="leaf" size={40} color={C.primary} />
           </View>
           <Text
-            className="text-2xl font-semibold text-center"
+            className="text-2xl text-center px-1"
             style={{ color: C.primaryDark }}
             allowFontScaling={false}
           >
@@ -113,7 +113,7 @@ export default function HomePage() {
             onPress={() => router.navigate('/onboarding')}
           >
             <Text
-              className="text-base font-semibold text-white"
+              className="text-base text-white px-2"
               allowFontScaling={false}
               numberOfLines={1}
               adjustsFontSizeToFit
@@ -139,7 +139,7 @@ export default function HomePage() {
               {today}
             </Text>
             <Text
-              className="text-xl font-semibold mt-0.5"
+              className="text-xl mt-0.5 px-1"
               style={{ color: C.text }}
               allowFontScaling={false}
               numberOfLines={1}
@@ -171,7 +171,7 @@ export default function HomePage() {
         </View>
 
         {/* 三大营养素进度 */}
-        <Text className="text-sm font-semibold mt-6 mb-3" style={{ color: C.muted }}>
+        <Text className="text-sm mt-6 mb-3 px-1" style={{ color: C.muted }} allowFontScaling={false}>
           三大营养素
         </Text>
         <View className="rounded-[24px] p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
@@ -183,12 +183,12 @@ export default function HomePage() {
         {/* 阶段计划 */}
         {profile.goal !== 'maintain' && profile.targetWeightKg ? (
           <View className="rounded-[24px] p-5 mt-6" style={{ backgroundColor: C.surface, ...shadow() }}>
-            <Text className="text-sm font-semibold" style={{ color: C.muted }}>
+            <Text className="text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
               阶段计划
             </Text>
             <View className="flex-row items-end justify-between mt-2">
               <Text
-                className="text-lg font-semibold"
+                className="text-lg px-1"
                 style={{ color: C.text }}
                 allowFontScaling={false}
                 numberOfLines={1}
@@ -210,7 +210,7 @@ export default function HomePage() {
         {/* 今日记录与历史入口 */}
         <View className="flex-row items-center justify-between mt-6 mb-3">
           <Text
-            className="text-sm font-semibold"
+            className="text-sm px-1"
             style={{ color: C.muted }}
             allowFontScaling={false}
             numberOfLines={1}
@@ -222,7 +222,7 @@ export default function HomePage() {
             className="flex-row items-center"
             onPress={() => router.navigate('/history')}
           >
-            <Text className="text-xs font-semibold" style={{ color: C.primary }}>
+            <Text className="text-xs px-1" style={{ color: C.primary }} allowFontScaling={false}>
               历史记录
             </Text>
             <Ionicons name="chevron-forward" size={14} color={C.primary} />
@@ -235,7 +235,7 @@ export default function HomePage() {
             style={{ backgroundColor: C.surface, ...shadow() }}
           >
             <Ionicons name="restaurant-outline" size={36} color={C.muted} />
-            <Text className="mt-3 text-sm font-semibold" style={{ color: C.text }}>
+            <Text className="mt-3 text-sm px-1" style={{ color: C.text }} allowFontScaling={false}>
               今天还没有记录
             </Text>
             <Text className="mt-1 text-xs" style={{ color: C.muted }}>
@@ -264,11 +264,11 @@ export default function HomePage() {
                 )}
                 <View className="flex-1 ml-3">
                   <View className="flex-row items-center">
-                    <Text className="text-base font-semibold flex-1" style={{ color: C.text }} numberOfLines={1}>
+                    <Text className="text-base flex-1 pr-2" style={{ color: C.text }} numberOfLines={1}>
                       {r.name}
                     </Text>
                     {r.source === 'photo-ai' ? (
-                      <Text className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full mr-1" style={{ color: C.primary, backgroundColor: `${C.primary}1c` }}>
+                      <Text className="text-[10px] px-1.5 py-0.5 rounded-full mr-1" style={{ color: C.primary, backgroundColor: `${C.primary}1c` }} allowFontScaling={false}>
                         AI
                       </Text>
                     ) : null}
@@ -300,7 +300,7 @@ export default function HomePage() {
         >
           <Ionicons name="add-circle" size={22} color="#fff" />
           <Text
-            className="ml-2 text-base font-semibold text-white"
+            className="ml-2 text-base text-white px-2"
             allowFontScaling={false}
             numberOfLines={1}
             adjustsFontSizeToFit

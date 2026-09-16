@@ -24,7 +24,7 @@ import { useSafeRouter } from '@/hooks/useSafeRouter';
 
 type Tab = 'photo' | 'manual';
 
-const inputClass = 'rounded-2xl px-4 py-3 text-base font-semibold';
+const inputClass = 'rounded-2xl px-4 py-3 text-base';
 const inputStyle = { backgroundColor: C.field, color: C.text } as const;
 
 export default function AddFoodPage() {
@@ -179,7 +179,7 @@ export default function AddFoodPage() {
       {/* 顶部标题 */}
       <View className="px-5 pt-2 pb-3">
         <Text
-          className="text-2xl font-semibold"
+          className="text-2xl px-1"
           style={{ color: C.primaryDark }}
           allowFontScaling={false}
         >
@@ -203,7 +203,7 @@ export default function AddFoodPage() {
               style={{ backgroundColor: active ? '#fff' : 'transparent', ...shadow() }}
               onPress={() => setTab(t.k)}
             >
-              <Text className="text-sm font-semibold" style={{ color: active ? C.primaryDark : C.muted }}>
+              <Text className="text-sm px-1" style={{ color: active ? C.primaryDark : C.muted }} allowFontScaling={false}>
                 {t.l}
               </Text>
             </TouchableOpacity>
@@ -233,10 +233,10 @@ export default function AddFoodPage() {
                   onPress={() => pickImage(false)}
                 >
                   <Ionicons name="camera-outline" size={40} color={C.muted} />
-                  <Text className="mt-2 text-sm font-semibold" style={{ color: C.text }}>
+                  <Text className="mt-2 text-sm px-1" style={{ color: C.text }} allowFontScaling={false}>
                     点击选择食物照片
                   </Text>
-                  <Text className="mt-1 text-xs" style={{ color: C.muted }}>
+                  <Text className="mt-1 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
                     从相册选择或拍摄
                   </Text>
                 </TouchableOpacity>
@@ -251,7 +251,7 @@ export default function AddFoodPage() {
                 onPress={() => pickImage(false)}
               >
                 <Ionicons name="images-outline" size={18} color={C.primaryDark} />
-                <Text className="ml-2 text-sm font-semibold" style={{ color: C.primaryDark }}>
+                <Text className="ml-2 text-sm px-1" style={{ color: C.primaryDark }} allowFontScaling={false}>
                   相册
                 </Text>
               </TouchableOpacity>
@@ -261,7 +261,7 @@ export default function AddFoodPage() {
                 onPress={() => pickImage(true)}
               >
                 <Ionicons name="camera" size={18} color={C.primaryDark} />
-                <Text className="ml-2 text-sm font-semibold" style={{ color: C.primaryDark }}>
+                <Text className="ml-2 text-sm px-1" style={{ color: C.primaryDark }} allowFontScaling={false}>
                   拍照
                 </Text>
               </TouchableOpacity>
@@ -279,7 +279,7 @@ export default function AddFoodPage() {
                   <>
                     <ActivityIndicator color="#fff" size="small" />
                     <Text
-                      className="ml-2.5 text-base font-semibold text-white"
+                      className="ml-2.5 text-base text-white px-2"
                       allowFontScaling={false}
                       numberOfLines={1}
                       adjustsFontSizeToFit
@@ -289,7 +289,7 @@ export default function AddFoodPage() {
                   </>
                 ) : (
                   <Text
-                    className="text-base font-semibold text-white"
+                    className="text-base text-white px-2"
                     allowFontScaling={false}
                     numberOfLines={1}
                     adjustsFontSizeToFit
@@ -333,7 +333,7 @@ export default function AddFoodPage() {
               disabled={saving}
             >
               <Text
-                className="text-base font-semibold text-white"
+                className="text-base text-white px-2"
                 allowFontScaling={false}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -377,10 +377,10 @@ function ResultForm({
   return (
     <View className="mt-5 rounded-3xl p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
       <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-base font-semibold" style={{ color: C.primaryDark }}>
+        <Text className="text-base pr-2" style={{ color: C.primaryDark }} allowFontScaling={false}>
           识别结果
         </Text>
-        <Text className="text-xs font-semibold px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }}>
+        <Text className="text-xs px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }} allowFontScaling={false}>
           可信度 {(bio.confidence * 100).toFixed(0)}%
         </Text>
       </View>
@@ -415,7 +415,7 @@ function ResultForm({
         disabled={saving}
       >
         <Text
-          className="text-base font-semibold text-white"
+          className="text-base text-white px-2"
           allowFontScaling={false}
           numberOfLines={1}
           adjustsFontSizeToFit
@@ -440,7 +440,7 @@ function Field({
 }) {
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+      <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
         {label}
       </Text>
       <TextInput
@@ -465,13 +465,13 @@ function RowFields({
   return (
     <View className="flex-row gap-3 mb-4">
       <View className="flex-1">
-        <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+        <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
           {left.label}
         </Text>
         <TextInput className={inputClass} style={inputStyle} value={left.value} onChangeText={left.onChange} />
       </View>
       <View className="flex-1">
-        <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+        <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
           {right.label}
         </Text>
         <TextInput className={inputClass} style={inputStyle} value={right.value} onChangeText={right.onChange} />

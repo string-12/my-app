@@ -77,11 +77,11 @@ export default function ProgressRing({
           </Text>
         </View>
       </View>
-      <Text className="mt-4 text-base font-bold" style={{ color: C.text }}>
+      <Text className="mt-4 text-base px-1" style={{ color: C.text }} allowFontScaling={false}>
         {label}
       </Text>
       {sublabel ? (
-        <Text className="mt-1 text-xs text-center" style={{ color: C.muted }}>
+        <Text className="mt-1 text-xs text-center px-2" style={{ color: C.muted }} allowFontScaling={false}>
           {sublabel}
         </Text>
       ) : null}

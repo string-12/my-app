@@ -78,7 +78,7 @@ export default function SettingsScreen() {
           <FontAwesome6 name="arrow-left" size={18} color={C.text} />
         </TouchableOpacity>
         <Text
-          className="flex-1 text-center text-2xl font-semibold"
+          className="flex-1 text-center text-2xl px-1"
           style={{ color: C.text }}
           allowFontScaling={false}
           numberOfLines={1}
@@ -110,7 +110,7 @@ export default function SettingsScreen() {
               <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: C.cardIconBg }}>
                 <FontAwesome6 name="robot" size={18} color={C.primary} />
               </View>
-              <Text className="text-lg font-semibold" style={{ color: C.text }}>
+              <Text className="text-lg px-1" style={{ color: C.text }} allowFontScaling={false}>
                 选择模型
               </Text>
             </View>
@@ -129,10 +129,10 @@ export default function SettingsScreen() {
                   }}
                 >
                   <View className="flex-1">
-                    <Text className="text-base font-semibold" style={{ color: selected ? C.primaryDark : C.text }}>
+                    <Text className="text-base pr-2" style={{ color: selected ? C.primaryDark : C.text }} allowFontScaling={false}>
                       {m.name}
                     </Text>
-                    <Text className="mt-1 text-xs" style={{ color: C.muted }}>
+                    <Text className="mt-1 text-xs pr-2" style={{ color: C.muted }} allowFontScaling={false}>
                       {m.vision ? '支持图片识别' : '仅文本估算'}
                     </Text>
                   </View>
@@ -156,7 +156,7 @@ export default function SettingsScreen() {
               <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: C.cardIconBg }}>
                 <FontAwesome6 name="key" size={18} color={C.primary} />
               </View>
-              <Text className="text-lg font-semibold" style={{ color: C.text }}>
+              <Text className="text-lg px-1" style={{ color: C.text }} allowFontScaling={false}>
                 API Key
               </Text>
             </View>
@@ -195,10 +195,10 @@ export default function SettingsScreen() {
                 <FontAwesome6 name="sliders" size={18} color={C.primary} />
               </View>
               <View>
-                <Text className="text-base font-semibold" style={{ color: C.text }}>
+                <Text className="text-base pr-2" style={{ color: C.text }} allowFontScaling={false}>
                   修改目标与身体数据
                 </Text>
-                <Text className="mt-0.5 text-xs" style={{ color: C.muted }}>
+                <Text className="mt-0.5 text-xs pr-2" style={{ color: C.muted }} allowFontScaling={false}>
                   调整减脂/增重目标和基础信息
                 </Text>
               </View>
@@ -221,7 +221,7 @@ export default function SettingsScreen() {
             }}
           >
             <Text
-              className="text-base font-semibold"
+              className="text-base px-2"
               style={{ color: saving ? C.primary : '#FFFFFF' }}
               allowFontScaling={false}
               numberOfLines={1}

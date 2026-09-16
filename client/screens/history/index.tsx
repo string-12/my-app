@@ -95,7 +95,7 @@ export default function HistoryPage() {
           <Ionicons name="arrow-back" size={22} color={C.primary} />
         </TouchableOpacity>
         <Text
-          className="flex-1 text-center text-xl font-semibold"
+          className="flex-1 text-center text-xl px-1"
           style={{ color: C.text }}
           allowFontScaling={false}
           numberOfLines={1}
@@ -115,7 +115,7 @@ export default function HistoryPage() {
             >
               <Ionicons name="calendar-outline" size={28} color={C.muted} />
             </View>
-            <Text className="text-base font-semibold" style={{ color: C.text }}>
+            <Text className="text-base px-1" style={{ color: C.text }} allowFontScaling={false}>
               暂无历史记录
             </Text>
             <Text className="mt-2 text-sm text-center" style={{ color: C.muted }}>
@@ -141,7 +141,7 @@ export default function HistoryPage() {
                     <View className="flex-row items-center justify-between">
                       <View>
                         <Text
-                          className="text-lg font-semibold"
+                          className="text-lg px-1"
                           style={{ color: C.text }}
                           allowFontScaling={false}
                           numberOfLines={1}
@@ -167,7 +167,7 @@ export default function HistoryPage() {
                         className="mb-3 rounded-2xl p-4"
                         style={{ backgroundColor: C.primaryLight }}
                       >
-                        <Text className="text-xs mb-2" style={{ color: C.muted }}>
+                        <Text className="text-xs mb-2 px-1" style={{ color: C.muted }} allowFontScaling={false}>
                           当日汇总
                         </Text>
                         <View className="flex-row justify-between">
@@ -178,10 +178,10 @@ export default function HistoryPage() {
                             { k: '脂肪', v: `${data.totals.fat}g` },
                           ].map((m) => (
                             <View key={m.k} className="items-center">
-                              <Text className="text-sm font-semibold" style={{ color: C.text }}>
+                              <Text className="text-sm" style={{ color: C.text }} allowFontScaling={false}>
                                 {m.v}
                               </Text>
-                              <Text className="text-[10px]" style={{ color: C.muted }}>
+                              <Text className="text-[10px] px-0.5" style={{ color: C.muted }} allowFontScaling={false}>
                                 {m.k}
                               </Text>
                             </View>
@@ -203,7 +203,7 @@ export default function HistoryPage() {
                             >
                               <View className="flex-1">
                                 <Text
-                                  className="text-sm font-semibold"
+                                  className="text-sm pr-2"
                                   style={{ color: C.text }}
                                   numberOfLines={1}
                                 >

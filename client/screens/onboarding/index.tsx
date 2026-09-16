@@ -24,7 +24,7 @@ import { saveProfile, Profile } from '@/utils/storage';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 
 const inputBase =
-  'flex-1 rounded-2xl px-4 py-3 text-base font-semibold';
+  'flex-1 rounded-2xl px-4 py-3 text-base';
 const inputStyle = { backgroundColor: C.field, color: C.text } as const;
 
 export default function OnboardingPage() {
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Text
-            className="text-2xl font-semibold"
+            className="text-2xl px-1"
             style={{ color: C.primaryDark }}
             allowFontScaling={false}
           >
@@ -165,7 +165,7 @@ export default function OnboardingPage() {
                   }}
                 >
                   <Text
-                    className="text-base font-semibold"
+                    className="text-base px-1"
                     style={{ color: active ? '#fff' : C.text }}
                     allowFontScaling={false}
                     numberOfLines={1}
@@ -174,8 +174,9 @@ export default function OnboardingPage() {
                     {g.label}
                   </Text>
                   <Text
-                    className="mt-1 text-[11px] text-center"
+                    className="mt-1 text-[11px] text-center px-1"
                     style={{ color: active ? 'rgba(255,255,255,0.85)' : C.muted }}
+                    allowFontScaling={false}
                   >
                     {g.desc}
                   </Text>
@@ -208,7 +209,7 @@ export default function OnboardingPage() {
                   }}
                 >
                   <Text
-                    className="text-base font-semibold"
+                    className="text-base px-1"
                     style={{ color: active ? '#fff' : C.text }}
                     allowFontScaling={false}
                     numberOfLines={1}
@@ -293,7 +294,7 @@ export default function OnboardingPage() {
               className="mt-6 rounded-3xl p-5"
               style={{ backgroundColor: C.primary, ...shadow() }}
             >
-              <Text className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>每日推荐摄入</Text>
+              <Text className="text-sm px-1" style={{ color: 'rgba(255,255,255,0.8)' }} allowFontScaling={false}>每日推荐摄入</Text>
               <View className="flex-row items-end mt-1">
                 <Text className="text-4xl font-semibold text-white" allowFontScaling={false}>
                   {preview.calories}
@@ -333,7 +334,7 @@ export default function OnboardingPage() {
             disabled={saving}
           >
             <Text
-              className="text-base font-semibold text-white"
+              className="text-base text-white px-2"
               allowFontScaling={false}
               numberOfLines={1}
               adjustsFontSizeToFit
@@ -359,7 +360,7 @@ function shadow() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <Text className="mt-6 mb-3 text-sm font-semibold" style={{ color: C.muted }}>
+    <Text className="mt-6 mb-3 text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
       {children}
     </Text>
   );
@@ -376,7 +377,7 @@ function NumberField({
 }) {
   return (
     <View className="flex-1">
-      <Text className="mb-2 text-xs font-semibold" style={{ color: C.muted }}>
+      <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
         {label}
       </Text>
       <TextInput
