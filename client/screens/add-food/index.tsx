@@ -17,12 +17,14 @@ import { Screen } from '@/components/Screen';
 import {
   analyzeFoodImage,
   estimateFoodNutrition,
-  RecognizedFood,
+  type RecognizedFood,
+  type RecognizedMeal,
 } from '@/screens/add-food/aiFoodRecognition';
-import { addRecord, dayKey, FoodSource } from '@/utils/storage';
+import { addRecord, dayKey, type FoodSource } from '@/utils/storage';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 
 type Tab = 'photo' | 'manual';
+type EditableItem = RecognizedFood & { id: string };
 
 const inputClass = 'rounded-2xl px-4 py-3 text-base';
 const inputStyle = { backgroundColor: C.field, color: C.text } as const;
@@ -34,7 +36,7 @@ export default function AddFoodPage() {
   // 拍照识别状态
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
-  const [bio, setBio] = useState<RecognizedFood | null>(null);
+  const [items, setItems] = useState<EditableItem[] | null>(null);
 
   // 手动输入状态
   const [mName, setMName] = useState('');
@@ -75,7 +77,7 @@ export default function AddFoodPage() {
 
   /** 选择图片来源（拍照 / 相册） */
   const pickImage = async (fromCamera: boolean) => {
-    setBio(null);
+    setItems(null);
     setImageUri(null);
     try {
       let result: ImagePicker.ImagePickerResult;
@@ -114,11 +116,16 @@ export default function AddFoodPage() {
   const runAnalyze = async () => {
     if (!imageUri) return;
     setAnalyzing(true);
-    setBio(null);
+    setItems(null);
     try {
       // 🔌 接入点：真实模型 API（见 aiFoodRecognition.ts）
-      const res = await analyzeFoodImage(imageUri);
-      setBio(res);
+      const res: RecognizedMeal = await analyzeFoodImage(imageUri);
+      setItems(
+        res.items.map((it, idx) => ({
+          ...it,
+          id: `${Date.now()}-${idx}`,
+        }))
+      );
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch {
       Toast.show({ type: 'error', text1: '识别失败，请重试或手动输入' });
@@ -127,51 +134,89 @@ export default function AddFoodPage() {
     }
   };
 
-  const saveRecord = async (payload: {
-    name: string;
-    amountGram: number;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-    source: FoodSource;
-  }) => {
-    const { name, calories } = payload;
-    if (!name.trim() || !calories || calories <= 0) {
-      Toast.show({ type: 'error', text1: '请至少填写食物名称与热量' });
-      return false;
+  const updateItem = (id: string, patch: Partial<RecognizedFood>) => {
+    setItems((prev) =>
+      prev
+        ? prev.map((it) => (it.id === id ? { ...it, ...patch } : it))
+        : prev
+    );
+  };
+
+  const removeItem = (id: string) => {
+    setItems((prev) => (prev ? prev.filter((it) => it.id !== id) : prev));
+  };
+
+  const total = items
+    ? {
+        calories: items.reduce((s, it) => s + (it.calories || 0), 0),
+        protein: items.reduce((s, it) => s + (it.protein || 0), 0),
+        carbs: items.reduce((s, it) => s + (it.carbs || 0), 0),
+        fat: items.reduce((s, it) => s + (it.fat || 0), 0),
+      }
+    : null;
+
+  /** 保存所有识别出的食物记录 */
+  const handleSaveAll = async () => {
+    if (!items || items.length === 0) return;
+    if (items.some((it) => !it.name.trim())) {
+      Toast.show({ type: 'error', text1: '请为每份食物填写名称' });
+      return;
     }
     setSaving(true);
-    await addRecord({ ...payload, day: dayKey(), imageUri: imageUri ?? undefined });
-    setSaving(false);
-    Toast.show({ type: 'success', text1: '记录已保存' });
-    router.back();
-    return true;
+    try {
+      const day = dayKey();
+      await Promise.all(
+        items.map((it) =>
+          addRecord({
+            name: it.name,
+            amountGram: it.amountGram,
+            calories: it.calories,
+            protein: it.protein,
+            carbs: it.carbs,
+            fat: it.fat,
+            source: 'photo-ai' as FoodSource,
+            day,
+            imageUri: imageUri ?? undefined,
+          })
+        )
+      );
+      Toast.show({ type: 'success', text1: `已保存 ${items.length} 条记录` });
+      router.back();
+    } catch {
+      Toast.show({ type: 'error', text1: '保存失败，请重试' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   /** 手动输入保存 */
   const handleManualSave = () => {
-    saveRecord({
-      name: mName,
+    const name = mName.trim();
+    const calories = Number(mCal) || 0;
+    if (!name || !calories || calories <= 0) {
+      Toast.show({ type: 'error', text1: '请至少填写食物名称与热量' });
+      return;
+    }
+    setSaving(true);
+    addRecord({
+      name,
       amountGram: Number(mAmount) || 0,
-      calories: Number(mCal) || 0,
+      calories,
       protein: Number(mProtein) || 0,
       carbs: Number(mCarbs) || 0,
       fat: Number(mFat) || 0,
       source: 'manual',
-    });
-  };
-
-  /** AI 结果保存（使用编辑后的字段） */
-  const handleBioSave = (fields: {
-    name: string;
-    amountGram: number;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  }) => {
-    saveRecord({ ...fields, source: 'photo-ai' });
+      day: dayKey(),
+      imageUri: undefined,
+    })
+      .then(() => {
+        Toast.show({ type: 'success', text1: '记录已保存' });
+        router.back();
+      })
+      .catch(() => {
+        Toast.show({ type: 'error', text1: '保存失败，请重试' });
+      })
+      .finally(() => setSaving(false));
   };
 
   return (
@@ -203,7 +248,11 @@ export default function AddFoodPage() {
               style={{ backgroundColor: active ? '#fff' : 'transparent', ...shadow() }}
               onPress={() => setTab(t.k)}
             >
-              <Text className="text-sm px-1" style={{ color: active ? C.primaryDark : C.muted }} allowFontScaling={false}>
+              <Text
+                className="text-sm px-1"
+                style={{ color: active ? C.primaryDark : C.muted }}
+                allowFontScaling={false}
+              >
                 {t.l}
               </Text>
             </TouchableOpacity>
@@ -268,7 +317,7 @@ export default function AddFoodPage() {
             </View>
 
             {/* AI 识别按钮 */}
-            {imageUri && !bio ? (
+            {imageUri && !items ? (
               <TouchableOpacity
                 className="w-full rounded-2xl px-6 py-4 items-center flex-row justify-center"
                 style={{ backgroundColor: C.primary, ...shadow() }}
@@ -300,8 +349,93 @@ export default function AddFoodPage() {
               </TouchableOpacity>
             ) : null}
 
-            {/* 识别结果（可编辑） */}
-            {bio ? <ResultForm bio={bio} imageUri={imageUri ?? undefined} saving={saving} onSave={handleBioSave} /> : null}
+            {/* 识别结果：每份食物独立编辑 */}
+            {items && items.length > 0 ? (
+              <View className="mt-2">
+                <Text className="mb-3 text-base px-1" style={{ color: C.text }} allowFontScaling={false}>
+                  识别到 {items.length} 份食物，可单独修改名称和重量
+                </Text>
+
+                {items.map((it, idx) => (
+                  <EditableItemCard
+                    key={it.id}
+                    index={idx}
+                    item={it}
+                    imageUri={imageUri ?? undefined}
+                    onUpdate={updateItem}
+                    onRemove={removeItem}
+                  />
+                ))}
+
+                {/* 汇总 */}
+                {total ? (
+                  <View
+                    className="rounded-3xl p-5 mb-5"
+                    style={{ backgroundColor: C.surface, ...shadow() }}
+                  >
+                    <Text
+                      className="text-base mb-3 px-1"
+                      style={{ color: C.text }}
+                      allowFontScaling={false}
+                    >
+                      这餐汇总
+                    </Text>
+                    <View className="flex-row justify-between mb-2">
+                      <Text className="text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
+                        总热量
+                      </Text>
+                      <Text className="text-base px-1" style={{ color: C.primaryDark }} allowFontScaling={false}>
+                        {total.calories} kcal
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between mb-2">
+                      <Text className="text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
+                        蛋白质
+                      </Text>
+                      <Text className="text-base px-1" style={{ color: C.primaryDark }} allowFontScaling={false}>
+                        {total.protein} g
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between mb-2">
+                      <Text className="text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
+                        碳水
+                      </Text>
+                      <Text className="text-base px-1" style={{ color: C.primaryDark }} allowFontScaling={false}>
+                        {total.carbs} g
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between">
+                      <Text className="text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
+                        脂肪
+                      </Text>
+                      <Text className="text-base px-1" style={{ color: C.primaryDark }} allowFontScaling={false}>
+                        {total.fat} g
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+
+                <TouchableOpacity
+                  className="w-full rounded-2xl px-6 py-4 items-center justify-center"
+                  style={{ backgroundColor: C.primaryDark, ...shadow() }}
+                  onPress={handleSaveAll}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text
+                      className="text-base text-white px-2"
+                      allowFontScaling={false}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      保存这餐记录
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         ) : (
           <View>
@@ -350,134 +484,191 @@ export default function AddFoodPage() {
 
 const num = (t: string) => t.replace(/[^0-9.]/g, '');
 
-/** AI 识别结果编辑表单 */
-function ResultForm({
-  bio,
+/** 可单独编辑的每份食物卡片 */
+function EditableItemCard({
+  index,
+  item,
   imageUri,
-  saving,
-  onSave,
+  onUpdate,
+  onRemove,
 }: {
-  bio: RecognizedFood;
+  index: number;
+  item: EditableItem;
   imageUri?: string;
-  saving: boolean;
-  onSave: (fields: {
-    name: string;
-    amountGram: number;
-    calories: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  }) => void;
+  onUpdate: (id: string, patch: Partial<RecognizedFood>) => void;
+  onRemove: (id: string) => void;
 }) {
-  const [name, setName] = useState(bio.name);
-  const [amount, setAmount] = useState(String(bio.amountGram));
-  const [cal, setCal] = useState(String(bio.calories));
-  const [protein, setProtein] = useState(String(bio.protein));
-  const [carbs, setCarbs] = useState(String(bio.carbs));
-  const [fat, setFat] = useState(String(bio.fat));
+  const [name, setName] = useState(item.name);
+  const [amount, setAmount] = useState(String(item.amountGram));
+  const [macrosManual, setMacrosManual] = useState(false);
+  const [estimating, setEstimating] = useState(false);
 
-  // 用户是否手动修改过三大营养素/热量字段
-  const [macrosManuallyEdited, setMacrosManuallyEdited] = useState(false);
-  const [nameTouched, setNameTouched] = useState(false);
-  const [amountTouched, setAmountTouched] = useState(false);
-  const [autoEstimating, setAutoEstimating] = useState(false);
-
-  // AI 识别结果：修改食物名称或重量后自动重新估算营养成分
+  // 当名称或重量改变时，若用户未手动修改过营养素，则自动重新估算
   useEffect(() => {
-    const n = name.trim();
     const grams = Number(amount);
-    if (!n || !grams || grams <= 0) return;
-    if (!nameTouched && !amountTouched) return;
-    if (macrosManuallyEdited) return;
+    if (!name.trim() || !grams || grams <= 0) return;
+    if (macrosManual) return;
 
     const timer = setTimeout(async () => {
       try {
-        setAutoEstimating(true);
-        const res = await estimateFoodNutrition(n, grams);
-        setCal(String(res.calories));
-        setProtein(String(res.protein));
-        setCarbs(String(res.carbs));
-        setFat(String(res.fat));
+        setEstimating(true);
+        const res = await estimateFoodNutrition(name.trim(), grams);
+        onUpdate(item.id, {
+          name: name.trim(),
+          amountGram: grams,
+          calories: res.calories,
+          protein: res.protein,
+          carbs: res.carbs,
+          fat: res.fat,
+        });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {
-        // 估算失败时保留当前值，不覆盖
+        // 估算失败时不覆盖，保持当前值
       } finally {
-        setAutoEstimating(false);
+        setEstimating(false);
       }
     }, 900);
 
     return () => clearTimeout(timer);
-  }, [name, amount, nameTouched, amountTouched, macrosManuallyEdited]);
+  }, [name, amount, macrosManual, item.id]);
+
+  const handleMacroChange = (field: keyof RecognizedFood, value: string) => {
+    setMacrosManual(true);
+    const numValue = Number(value) || 0;
+    onUpdate(item.id, { [field]: numValue } as Partial<RecognizedFood>);
+  };
 
   return (
-    <View className="mt-5 rounded-3xl p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
-      <View className="flex-row items-center justify-between mb-3">
-        <View className="flex-row items-center flex-1">
-          {imageUri ? (
-            <Image
-              className="w-12 h-12 rounded-xl mr-3"
-              source={imageUri}
-              contentFit="cover"
-            />
-          ) : null}
-          <View className="flex-1">
-            <Text className="text-base pr-2" style={{ color: C.primaryDark }} allowFontScaling={false}>
-              识别结果
-            </Text>
-            <Text className="text-xs pr-2" style={{ color: C.muted }} allowFontScaling={false}>
-              可修改名称或重量，AI 会自动重算营养
-            </Text>
-          </View>
-        </View>
-        <Text className="text-xs px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }} allowFontScaling={false}>
-          可信度 {(bio.confidence * 100).toFixed(0)}%
+    <View className="rounded-3xl p-5 mb-4" style={{ backgroundColor: C.surface, ...shadow() }}>
+      <View className="flex-row items-center justify-between mb-4">
+        <Text className="text-sm px-1" style={{ color: C.muted }} allowFontScaling={false}>
+          食物 {index + 1}
         </Text>
+        <TouchableOpacity onPress={() => onRemove(item.id)} className="px-2 py-1">
+          <Text className="text-sm px-1" style={{ color: C.danger }} allowFontScaling={false}>
+            删除
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <Field label="食物名称 *" value={name} onChange={(t) => { setName(t); setNameTouched(true); }} />
-      <RowFields
-        left={{ label: '分量 (克)', value: amount, onChange: (t) => { setAmount(num(t)); setAmountTouched(true); } }}
-        right={{ label: '热量 (kcal) *', value: cal, onChange: (t) => { setCal(num(t)); setMacrosManuallyEdited(true); } }}
-      />
-      <RowFields
-        left={{ label: '蛋白质 (g)', value: protein, onChange: (t) => { setProtein(num(t)); setMacrosManuallyEdited(true); } }}
-        right={{ label: '碳水 (g)', value: carbs, onChange: (t) => { setCarbs(num(t)); setMacrosManuallyEdited(true); } }}
-      />
-      <Field label="脂肪 (g)" value={fat} onChange={(t) => { setFat(num(t)); setMacrosManuallyEdited(true); }} />
+      {imageUri ? (
+        <Image
+          className="w-full h-28 rounded-2xl mb-4"
+          source={imageUri}
+          contentFit="cover"
+          style={{ backgroundColor: C.field }}
+        />
+      ) : null}
 
-      {autoEstimating ? (
+      <View className="mb-3">
+        <Text className="text-sm mb-1.5 px-1" style={{ color: C.text }} allowFontScaling={false}>
+          名称
+        </Text>
+        <TextInput
+          className={inputClass}
+          style={inputStyle}
+          value={name}
+          onChangeText={(t) => {
+            setName(t);
+            onUpdate(item.id, { name: t.trim() });
+          }}
+          placeholder="如：米饭"
+          placeholderTextColor={C.placeholder}
+          allowFontScaling={false}
+        />
+      </View>
+
+      <View className="mb-3">
+        <Text className="text-sm mb-1.5 px-1" style={{ color: C.text }} allowFontScaling={false}>
+          重量 (克)
+        </Text>
+        <TextInput
+          className={inputClass}
+          style={inputStyle}
+          value={amount}
+          onChangeText={(t) => {
+            const v = num(t);
+            setAmount(v);
+            onUpdate(item.id, { amountGram: Number(v) || 0 });
+          }}
+          placeholder="150"
+          keyboardType="numeric"
+          placeholderTextColor={C.placeholder}
+          allowFontScaling={false}
+        />
+      </View>
+
+      {estimating ? (
         <View className="flex-row items-center mb-3">
           <ActivityIndicator size="small" color={C.primary} />
           <Text className="ml-2 text-sm" style={{ color: C.muted }}>
-            AI 正在根据新的名称/重量重新估算营养…
+            AI 正在根据新的名称/重量重新估算…
           </Text>
         </View>
       ) : null}
 
-      <TouchableOpacity
-        className="w-full mt-4 rounded-2xl px-6 py-4 items-center justify-center"
-        style={{ backgroundColor: C.primary, ...shadow() }}
-        onPress={() =>
-          onSave({
-            name,
-            amountGram: Number(amount) || 0,
-            calories: Number(cal) || 0,
-            protein: Number(protein) || 0,
-            carbs: Number(carbs) || 0,
-            fat: Number(fat) || 0,
-          })
-        }
-        disabled={saving}
-      >
-        <Text
-          className="text-base text-white px-2"
-          allowFontScaling={false}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-        >
-          保存这条识别
-        </Text>
-      </TouchableOpacity>
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <Text className="text-xs mb-1 px-1" style={{ color: C.muted }} allowFontScaling={false}>
+            热量
+          </Text>
+          <TextInput
+            className={`${inputClass} text-center`}
+            style={inputStyle}
+            value={String(item.calories || 0)}
+            onChangeText={(t) => handleMacroChange('calories', num(t))}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={C.placeholder}
+            allowFontScaling={false}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-xs mb-1 px-1" style={{ color: C.muted }} allowFontScaling={false}>
+            蛋白质
+          </Text>
+          <TextInput
+            className={`${inputClass} text-center`}
+            style={inputStyle}
+            value={String(item.protein || 0)}
+            onChangeText={(t) => handleMacroChange('protein', num(t))}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={C.placeholder}
+            allowFontScaling={false}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-xs mb-1 px-1" style={{ color: C.muted }} allowFontScaling={false}>
+            碳水
+          </Text>
+          <TextInput
+            className={`${inputClass} text-center`}
+            style={inputStyle}
+            value={String(item.carbs || 0)}
+            onChangeText={(t) => handleMacroChange('carbs', num(t))}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={C.placeholder}
+            allowFontScaling={false}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-xs mb-1 px-1" style={{ color: C.muted }} allowFontScaling={false}>
+            脂肪
+          </Text>
+          <TextInput
+            className={`${inputClass} text-center`}
+            style={inputStyle}
+            value={String(item.fat || 0)}
+            onChangeText={(t) => handleMacroChange('fat', num(t))}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={C.placeholder}
+            allowFontScaling={false}
+          />
+        </View>
+      </View>
     </View>
   );
 }
@@ -487,15 +678,17 @@ function Field({
   value,
   onChange,
   placeholder,
+  keyboardType = 'default',
 }: {
   label: string;
   value: string;
   onChange: (t: string) => void;
   placeholder?: string;
+  keyboardType?: 'default' | 'numeric';
 }) {
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
+      <Text className="text-sm mb-1.5 px-1" style={{ color: C.text }} allowFontScaling={false}>
         {label}
       </Text>
       <TextInput
@@ -504,33 +697,10 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#9FABA5"
+        placeholderTextColor={C.placeholder}
+        keyboardType={keyboardType}
+        allowFontScaling={false}
       />
-    </View>
-  );
-}
-
-function RowFields({
-  left,
-  right,
-}: {
-  left: { label: string; value: string; onChange: (t: string) => void };
-  right: { label: string; value: string; onChange: (t: string) => void };
-}) {
-  return (
-    <View className="flex-row gap-3 mb-4">
-      <View className="flex-1">
-        <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
-          {left.label}
-        </Text>
-        <TextInput className={inputClass} style={inputStyle} value={left.value} onChangeText={left.onChange} />
-      </View>
-      <View className="flex-1">
-        <Text className="mb-2 text-xs px-1" style={{ color: C.muted }} allowFontScaling={false}>
-          {right.label}
-        </Text>
-        <TextInput className={inputClass} style={inputStyle} value={right.value} onChangeText={right.onChange} />
-      </View>
     </View>
   );
 }
@@ -538,8 +708,8 @@ function RowFields({
 function shadow() {
   return {
     shadowColor: C.shadow,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 4,
   };

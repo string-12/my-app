@@ -2,8 +2,7 @@ import { createFormDataFile } from '@/utils';
 import { getAISettings, type AISettings } from '@/utils/storage';
 
 /**
- * AI 食物识别结果。
- * 后端 /api/v1/food/analyze 与 /api/v1/food/estimate 均返回此结构。
+ * AI 食物识别结果中的单条食物。
  */
 export interface RecognizedFood {
   name: string;
@@ -12,6 +11,14 @@ export interface RecognizedFood {
   protein: number;
   carbs: number;
   fat: number;
+  confidence?: number;
+}
+
+/**
+ * 后端 /api/v1/food/analyze 返回的多份食物结果。
+ */
+export interface RecognizedMeal {
+  items: RecognizedFood[];
   confidence: number;
 }
 
@@ -30,7 +37,7 @@ async function getAIHeaders(): Promise<Record<string, string>> {
  * 通过多模态 LLM 识别图片中的食物并估算营养成分。
  * 真实调用后端 /api/v1/food/analyze（multer 接收 image 字段）。
  */
-export async function analyzeFoodImage(imageUri: string): Promise<RecognizedFood> {
+export async function analyzeFoodImage(imageUri: string): Promise<RecognizedMeal> {
   if (!API_BASE) {
     throw new Error('未配置后端地址（EXPO_PUBLIC_BACKEND_BASE_URL）');
   }

@@ -19,16 +19,21 @@ const VISION_MODELS = new Set([
   'qwen-3-5-plus-260215',
 ]);
 
-const ANALYZE_SYSTEM_PROMPT = `你是一位专业的营养师和食物识别专家。请分析用户上传的食物照片，识别出主要食物名称并估算可见分量的营养成分。
+const ANALYZE_SYSTEM_PROMPT = `你是一位专业的营养师和食物识别专家。请分析用户上传的食物照片，识别出照片中的每一份食物，把它们拆分为独立条目，并分别估算每种食物可见分量的营养成分。
+如果照片里只有一种食物，items 数组中仍只放一条。
 请只返回一个 JSON 对象，不要包含任何 Markdown 代码块或解释，字段如下：
 {
-  "name": "食物名称（中文）",
-  "amountGram": 可见分量的重量（整数克）,
-  "calories": 总热量（整数 kcal）,
-  "protein": 蛋白质（整数克）,
-  "carbs": 碳水化合物（整数克）,
-  "fat": 脂肪（整数克）,
-  "confidence": 置信度（0 到 1 之间的小数）
+  "items": [
+    {
+      "name": "食物名称（中文）",
+      "amountGram": 可见分量的重量（整数克）,
+      "calories": 总热量（整数 kcal）,
+      "protein": 蛋白质（整数克）,
+      "carbs": 碳水化合物（整数克）,
+      "fat": 脂肪（整数克）
+    }
+  ],
+  "confidence": 整体置信度（0 到 1 之间的小数）
 }`;
 
 const ESTIMATE_SYSTEM_PROMPT = `你是一位专业的营养师。根据用户给出的食物名称和重量，估算该分量的营养成分。
@@ -64,38 +69,54 @@ function parseJsonFromLLM(content: string): unknown {
   }
 }
 
-function validateNutrition(data: unknown): data is {
-  name: string;
-  amountGram: number;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  confidence?: number;
-} {
+function validateItem(item: unknown): item is Record<string, unknown> {
   return (
-    typeof data === 'object' &&
-    data !== null &&
-    'name' in data &&
-    typeof (data as Record<string, unknown>).name === 'string' &&
-    'calories' in data &&
-    typeof (data as Record<string, unknown>).calories === 'number'
+    typeof item === 'object' &&
+    item !== null &&
+    'name' in item &&
+    typeof (item as Record<string, unknown>).name === 'string' &&
+    'calories' in item &&
+    typeof (item as Record<string, unknown>).calories === 'number'
   );
 }
 
-function normalizeResult(data: unknown) {
-  if (!validateNutrition(data)) {
-    throw new Error('LLM response missing required nutrition fields');
+function normalizeItem(item: Record<string, unknown>) {
+  return {
+    name: item.name,
+    amountGram: Math.max(0, Math.round((item.amountGram as number) || 0)),
+    calories: Math.max(0, Math.round((item.calories as number) || 0)),
+    protein: Math.max(0, Math.round((item.protein as number) || 0)),
+    carbs: Math.max(0, Math.round((item.carbs as number) || 0)),
+    fat: Math.max(0, Math.round((item.fat as number) || 0)),
+  };
+}
+
+function normalizeMeal(data: unknown) {
+  if (typeof data !== 'object' || data === null || !('items' in data)) {
+    throw new Error('LLM response missing required items array');
+  }
+  const items = (data as Record<string, unknown>).items;
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('LLM response items is empty');
+  }
+  const normalized = items.filter(validateItem).map(normalizeItem);
+  if (normalized.length === 0) {
+    throw new Error('LLM response has no valid food items');
   }
   return {
-    name: data.name,
-    amountGram: Math.max(0, Math.round(data.amountGram || 0)),
-    calories: Math.max(0, Math.round(data.calories || 0)),
-    protein: Math.max(0, Math.round(data.protein || 0)),
-    carbs: Math.max(0, Math.round(data.carbs || 0)),
-    fat: Math.max(0, Math.round(data.fat || 0)),
-    confidence: Math.min(Math.max(Number(data.confidence ?? 0.8), 0), 1),
+    items: normalized,
+    confidence: Math.min(
+      Math.max(Number((data as Record<string, unknown>).confidence ?? 0.8), 0),
+      1
+    ),
   };
+}
+
+function normalizeSingle(data: unknown) {
+  if (typeof data !== 'object' || data === null || !validateItem(data)) {
+    throw new Error('LLM response missing required nutrition fields');
+  }
+  return normalizeItem(data);
 }
 
 /** 从 Express headers 中提取需要透传给 LLM SDK 的请求头 */
@@ -168,7 +189,7 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
     );
 
     const data = parseJsonFromLLM(response.content);
-    const result = normalizeResult(data);
+    const result = normalizeMeal(data);
     res.json(result);
   } catch (err) {
     console.error('[/food/analyze] error:', err);
@@ -204,7 +225,7 @@ router.post('/estimate', express.json(), async (req, res) => {
     );
 
     const data = parseJsonFromLLM(response.content);
-    const result = normalizeResult(data);
+    const result = normalizeSingle(data);
     res.json(result);
   } catch (err) {
     console.error('[/food/estimate] error:', err);
