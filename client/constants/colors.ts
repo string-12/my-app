@@ -30,7 +30,15 @@ export const C = {
 
   /* 语义色 */
   danger: '#E5484D',
+  success: '#059669',
   white: '#FFFFFF',
+
+  /* 表单与卡片 */
+  inputBg: '#F0F6F3',
+  inputBorder: '#DCE8E2',
+  placeholder: '#9CA8A2',
+  cardIconBg: 'rgba(14,165,105,0.12)',
+  primaryLight: 'rgba(14,165,105,0.10)',
 };
 
 /** 营养素元数据 */

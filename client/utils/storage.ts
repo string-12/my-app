@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 
 const PROFILE_KEY = '@nutrilog/profile';
 const RECORDS_KEY = '@nutrilog/records';
+const SETTINGS_KEY = '@nutrilog/settings';
 
 export const dayKey = (d: Date | number = new Date()) => dayjs(d).format('YYYY-MM-DD');
 
@@ -113,4 +114,49 @@ export async function getDayTotals(day: string = dayKey()): Promise<DayTotals> {
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
+}
+
+/* ---------------- AI 模型设置 ---------------- */
+
+export interface AISettings {
+  /** 用户自定义 API Key，空字符串表示使用系统默认 */
+  apiKey: string;
+  /** 模型 ID */
+  model: string;
+}
+
+/** 后端可用模型列表（按技能环境实际列表维护） */
+export const AVAILABLE_MODELS = [
+  { id: 'doubao-seed-2-0-lite-260215', name: 'Doubao Seed 2.0 Lite', vision: true },
+  { id: 'doubao-seed-2-0-pro-260215', name: 'Doubao Seed 2.0 Pro', vision: true },
+  { id: 'doubao-seed-2-0-mini-260215', name: 'Doubao Seed 2.0 Mini', vision: true },
+  { id: 'qwen-3-5-plus-260215', name: 'Qwen 3.5 Plus', vision: true },
+  { id: 'glm-4-7-251222', name: 'GLM-4.7', vision: false },
+  { id: 'glm-5-0-260211', name: 'GLM-5', vision: false },
+  { id: 'glm-5-turbo-260316', name: 'GLM-5 Turbo', vision: false },
+  { id: 'minimax-m2-5-260212', name: 'MiniMax M2.5', vision: false },
+  { id: 'minimax-m2-7-260318', name: 'MiniMax M2.7', vision: false },
+] as const;
+
+export const DEFAULT_AI_SETTINGS: AISettings = {
+  apiKey: '',
+  model: AVAILABLE_MODELS[0].id,
+};
+
+export async function getAISettings(): Promise<AISettings> {
+  try {
+    const raw = await AsyncStorage.getItem(SETTINGS_KEY);
+    if (!raw) return DEFAULT_AI_SETTINGS;
+    const parsed = JSON.parse(raw) as Partial<AISettings>;
+    return {
+      apiKey: parsed.apiKey ?? DEFAULT_AI_SETTINGS.apiKey,
+      model: parsed.model || DEFAULT_AI_SETTINGS.model,
+    };
+  } catch {
+    return DEFAULT_AI_SETTINGS;
+  }
+}
+
+export async function saveAISettings(settings: AISettings): Promise<void> {
+  await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }

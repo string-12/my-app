@@ -273,7 +273,8 @@ import { Screen } from '../../../components/Screen';
   - **拍照识别**：拍摄或从相册选择食物照片 → 点击「AI 识别营养成分」→ 后端视觉大模型返回食物名称、分量与营养成分，可在保存前微调。
   - **手动输入**：填写食物名称与分量后，AI 会自动估算热量与三大营养素；也支持手动修改任意数值。
 - **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；下方展示今日记录列表，支持删除单条。
-- **本地持久化**：用户目标与饮食记录均存入 AsyncStorage，无需后端数据库，重启不丢失。
+- **AI 设置（settings）**：首页点击右上角设置图标，可自主选择 AI 模型并填写自己的 API Key；不填则使用系统默认模型。设置同样保存在 AsyncStorage。
+- **本地持久化**：用户目标、AI 设置与饮食记录均存入 AsyncStorage，无需后端数据库，重启不丢失。
 
 ### 技术说明
 
@@ -309,11 +310,13 @@ client/
 │   ├── _layout.tsx         # Stack 根布局
 │   ├── index.tsx           # 首页 = 每日进度仪表盘
 │   ├── add-food.tsx        # 记录一餐
-│   └── onboarding.tsx      # 目标设定
+│   ├── onboarding.tsx      # 目标设定
+│   └── settings.tsx        # AI 设置
 ├── screens/
 │   ├── home/               # 仪表盘页面
 │   ├── add-food/           # 记录页面 + aiFoodRecognition.ts（AI 识别接入点）
-│   └── onboarding/         # 目标设定页面
+│   ├── onboarding/         # 目标设定页面
+│   └── settings/           # AI 设置页面
 ├── components/             # Screen / ProgressRing / MacroBar
 ├── utils/                  # calc.ts(热量计算) / storage.ts(AsyncStorage)
 └── constants/colors.ts     # 健康翡翠配色 tokens

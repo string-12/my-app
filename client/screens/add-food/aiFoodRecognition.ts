@@ -1,4 +1,5 @@
 import { createFormDataFile } from '@/utils';
+import { getAISettings, type AISettings } from '@/utils/storage';
 
 /**
  * AI 食物识别结果。
@@ -16,6 +17,15 @@ export interface RecognizedFood {
 
 const API_BASE = process.env.EXPO_PUBLIC_BACKEND_BASE_URL;
 
+/** 读取用户自定义模型与 API Key，以请求头形式透传给后端 */
+async function getAIHeaders(): Promise<Record<string, string>> {
+  const settings = await getAISettings();
+  const headers: Record<string, string> = {};
+  if (settings.model) headers['x-model'] = settings.model;
+  if (settings.apiKey) headers['x-api-key'] = settings.apiKey;
+  return headers;
+}
+
 /**
  * 通过多模态 LLM 识别图片中的食物并估算营养成分。
  * 真实调用后端 /api/v1/food/analyze（multer 接收 image 字段）。
@@ -31,6 +41,7 @@ export async function analyzeFoodImage(imageUri: string): Promise<RecognizedFood
 
   const response = await fetch(`${API_BASE}/api/v1/food/analyze`, {
     method: 'POST',
+    headers: await getAIHeaders(),
     body: formData,
   });
 
@@ -56,7 +67,7 @@ export async function estimateFoodNutrition(
 
   const response = await fetch(`${API_BASE}/api/v1/food/estimate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await getAIHeaders()) },
     body: JSON.stringify({ name, amountGram }),
   });
 

@@ -133,7 +133,7 @@ export default function HomePage() {
           <TouchableOpacity
             className="w-11 h-11 rounded-full items-center justify-center"
             style={{ backgroundColor: C.surface, ...shadow() }}
-            onPress={() => router.navigate('/onboarding')}
+            onPress={() => router.navigate('/settings')}
           >
             <Ionicons name="settings-outline" size={20} color={C.primaryDark} />
           </TouchableOpacity>

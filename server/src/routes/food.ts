@@ -8,8 +8,16 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-/** 支持视觉的轻量模型，用于食物图片识别与文本营养估算 */
-const VISION_MODEL = 'doubao-seed-2-0-lite-260215';
+/** 默认视觉模型：图片识别必须使用支持图像输入的模型 */
+const DEFAULT_VISION_MODEL = 'doubao-seed-2-0-lite-260215';
+
+/** 用户可选择的模型中，支持图片输入的模型 ID 集合 */
+const VISION_MODELS = new Set([
+  'doubao-seed-2-0-lite-260215',
+  'doubao-seed-2-0-pro-260215',
+  'doubao-seed-2-0-mini-260215',
+  'qwen-3-5-plus-260215',
+]);
 
 const ANALYZE_SYSTEM_PROMPT = `你是一位专业的营养师和食物识别专家。请分析用户上传的食物照片，识别出主要食物名称并估算可见分量的营养成分。
 请只返回一个 JSON 对象，不要包含任何 Markdown 代码块或解释，字段如下：
@@ -91,6 +99,29 @@ function extractForwardHeaders(req: express.Request): Record<string, string> {
   return HeaderUtils.extractForwardHeaders(normalized);
 }
 
+/** 读取用户自定义 API Key，未提供时使用系统默认凭据 */
+function createClient(req: express.Request): LLMClient {
+  const userApiKey = req.headers['x-api-key'];
+  const config =
+    typeof userApiKey === 'string' && userApiKey.trim()
+      ? new Config({ apiKey: userApiKey.trim() })
+      : new Config();
+  return new LLMClient(config, extractForwardHeaders(req));
+}
+
+/** 读取用户选择的模型；图片识别场景会自动降级到默认视觉模型 */
+function resolveModel(req: express.Request, requireVision: boolean): string {
+  const userModel =
+    typeof req.headers['x-model'] === 'string' ? req.headers['x-model'].trim() : '';
+  if (!userModel) {
+    return requireVision ? DEFAULT_VISION_MODEL : VISION_MODELS.values().next().value as string;
+  }
+  if (requireVision && !VISION_MODELS.has(userModel)) {
+    return DEFAULT_VISION_MODEL;
+  }
+  return userModel;
+}
+
 /**
  * POST /api/v1/food/analyze
  * 上传食物照片，由多模态 LLM 返回估算的营养成分
@@ -106,7 +137,7 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
     const mime = req.file.mimetype || 'image/jpeg';
     const dataUri = `data:${mime};base64,${base64}`;
 
-    const client = new LLMClient(new Config(), extractForwardHeaders(req));
+    const client = createClient(req);
     const response = await client.invoke(
       [
         { role: 'system', content: ANALYZE_SYSTEM_PROMPT },
@@ -124,7 +155,7 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
           ],
         },
       ],
-      { model: VISION_MODEL, temperature: 0.2 }
+      { model: resolveModel(req, true), temperature: 0.2 }
     );
 
     const data = parseJsonFromLLM(response.content);
@@ -151,7 +182,7 @@ router.post('/estimate', express.json(), async (req, res) => {
       return;
     }
 
-    const client = new LLMClient(new Config(), extractForwardHeaders(req));
+    const client = createClient(req);
     const response = await client.invoke(
       [
         { role: 'system', content: ESTIMATE_SYSTEM_PROMPT },
@@ -160,7 +191,7 @@ router.post('/estimate', express.json(), async (req, res) => {
           content: `食物名称：${name}\n重量：${Math.round(amountGram)}g\n请估算营养成分。`,
         },
       ],
-      { model: VISION_MODEL, temperature: 0.2 }
+      { model: resolveModel(req, false), temperature: 0.2 }
     );
 
     const data = parseJsonFromLLM(response.content);
