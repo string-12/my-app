@@ -95,7 +95,7 @@ export default function HistoryPage() {
           <Ionicons name="arrow-back" size={22} color={C.primary} />
         </TouchableOpacity>
         <Text
-          className="flex-1 text-center text-xl font-bold"
+          className="flex-1 text-center text-xl font-semibold"
           style={{ color: C.text }}
           allowFontScaling={false}
           numberOfLines={1}
@@ -141,7 +141,7 @@ export default function HistoryPage() {
                     <View className="flex-row items-center justify-between">
                       <View>
                         <Text
-                          className="text-lg font-bold"
+                          className="text-lg font-semibold"
                           style={{ color: C.text }}
                           allowFontScaling={false}
                           numberOfLines={1}
@@ -178,7 +178,7 @@ export default function HistoryPage() {
                             { k: '脂肪', v: `${data.totals.fat}g` },
                           ].map((m) => (
                             <View key={m.k} className="items-center">
-                              <Text className="text-sm font-bold" style={{ color: C.text }}>
+                              <Text className="text-sm font-semibold" style={{ color: C.text }}>
                                 {m.v}
                               </Text>
                               <Text className="text-[10px]" style={{ color: C.muted }}>

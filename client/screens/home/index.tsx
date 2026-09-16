@@ -98,7 +98,7 @@ export default function HomePage() {
             <Ionicons name="leaf" size={40} color={C.primary} />
           </View>
           <Text
-            className="text-2xl font-bold text-center"
+            className="text-2xl font-semibold text-center"
             style={{ color: C.primaryDark }}
             allowFontScaling={false}
           >
@@ -113,7 +113,7 @@ export default function HomePage() {
             onPress={() => router.navigate('/onboarding')}
           >
             <Text
-              className="text-base font-bold text-white"
+              className="text-base font-semibold text-white"
               allowFontScaling={false}
               numberOfLines={1}
               adjustsFontSizeToFit
@@ -130,15 +130,16 @@ export default function HomePage() {
 
   return (
     <Screen statusBarStyle="dark" safeAreaEdges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }}>
-        {/* 顶部标题栏 */}
+      <View className="flex-1 px-5 pt-4">
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+          {/* 顶部标题栏 */}
         <View className="flex-row items-center justify-between mb-5">
           <View>
             <Text className="text-sm" style={{ color: C.muted }}>
               {today}
             </Text>
             <Text
-              className="text-xl font-bold mt-0.5"
+              className="text-xl font-semibold mt-0.5"
               style={{ color: C.text }}
               allowFontScaling={false}
               numberOfLines={1}
@@ -170,7 +171,7 @@ export default function HomePage() {
         </View>
 
         {/* 三大营养素进度 */}
-        <Text className="text-sm font-bold mt-6 mb-3" style={{ color: C.muted }}>
+        <Text className="text-sm font-semibold mt-6 mb-3" style={{ color: C.muted }}>
           三大营养素
         </Text>
         <View className="rounded-[24px] p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
@@ -182,12 +183,12 @@ export default function HomePage() {
         {/* 阶段计划 */}
         {profile.goal !== 'maintain' && profile.targetWeightKg ? (
           <View className="rounded-[24px] p-5 mt-6" style={{ backgroundColor: C.surface, ...shadow() }}>
-            <Text className="text-sm font-bold" style={{ color: C.muted }}>
+            <Text className="text-sm font-semibold" style={{ color: C.muted }}>
               阶段计划
             </Text>
             <View className="flex-row items-end justify-between mt-2">
               <Text
-                className="text-lg font-bold"
+                className="text-lg font-semibold"
                 style={{ color: C.text }}
                 allowFontScaling={false}
                 numberOfLines={1}
@@ -208,7 +209,13 @@ export default function HomePage() {
 
         {/* 今日记录与历史入口 */}
         <View className="flex-row items-center justify-between mt-6 mb-3">
-          <Text className="text-sm font-bold" style={{ color: C.muted }}>
+          <Text
+            className="text-sm font-semibold"
+            style={{ color: C.muted }}
+            allowFontScaling={false}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
             今日记录
           </Text>
           <TouchableOpacity
@@ -257,11 +264,11 @@ export default function HomePage() {
                 )}
                 <View className="flex-1 ml-3">
                   <View className="flex-row items-center">
-                    <Text className="text-base font-bold flex-1" style={{ color: C.text }} numberOfLines={1}>
+                    <Text className="text-base font-semibold flex-1" style={{ color: C.text }} numberOfLines={1}>
                       {r.name}
                     </Text>
                     {r.source === 'photo-ai' ? (
-                      <Text className="text-[10px] font-bold px-1.5 py-0.5 rounded-full mr-1" style={{ color: C.primary, backgroundColor: `${C.primary}1c` }}>
+                      <Text className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full mr-1" style={{ color: C.primary, backgroundColor: `${C.primary}1c` }}>
                         AI
                       </Text>
                     ) : null}
@@ -282,16 +289,26 @@ export default function HomePage() {
             ))}
           </View>
         )}
-      </ScrollView>
+        </ScrollView>
 
-      {/* 悬浮添加按钮 */}
-      <TouchableOpacity
-        className="absolute bottom-8 right-6 w-16 h-16 rounded-full items-center justify-center"
-        style={{ backgroundColor: C.primary, ...shadow() }}
-        onPress={() => router.navigate('/add-food')}
-      >
-        <Ionicons name="add" size={30} color="#fff" />
-      </TouchableOpacity>
+        {/* 底部添加按钮 */}
+        <TouchableOpacity
+          className="mt-4 mb-5 w-full rounded-2xl py-4 px-6 flex-row items-center justify-center"
+          style={{ backgroundColor: C.primary, ...shadow() }}
+          onPress={() => router.navigate('/add-food')}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="add-circle" size={22} color="#fff" />
+          <Text
+            className="ml-2 text-base font-semibold text-white"
+            allowFontScaling={false}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            记录一餐
+          </Text>
+        </TouchableOpacity>
+      </View>
     </Screen>
   );
 }

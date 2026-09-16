@@ -179,7 +179,7 @@ export default function AddFoodPage() {
       {/* 顶部标题 */}
       <View className="px-5 pt-2 pb-3">
         <Text
-          className="text-2xl font-bold"
+          className="text-2xl font-semibold"
           style={{ color: C.primaryDark }}
           allowFontScaling={false}
         >
@@ -203,7 +203,7 @@ export default function AddFoodPage() {
               style={{ backgroundColor: active ? '#fff' : 'transparent', ...shadow() }}
               onPress={() => setTab(t.k)}
             >
-              <Text className="text-sm font-bold" style={{ color: active ? C.primaryDark : C.muted }}>
+              <Text className="text-sm font-semibold" style={{ color: active ? C.primaryDark : C.muted }}>
                 {t.l}
               </Text>
             </TouchableOpacity>
@@ -251,7 +251,7 @@ export default function AddFoodPage() {
                 onPress={() => pickImage(false)}
               >
                 <Ionicons name="images-outline" size={18} color={C.primaryDark} />
-                <Text className="ml-2 text-sm font-bold" style={{ color: C.primaryDark }}>
+                <Text className="ml-2 text-sm font-semibold" style={{ color: C.primaryDark }}>
                   相册
                 </Text>
               </TouchableOpacity>
@@ -261,7 +261,7 @@ export default function AddFoodPage() {
                 onPress={() => pickImage(true)}
               >
                 <Ionicons name="camera" size={18} color={C.primaryDark} />
-                <Text className="ml-2 text-sm font-bold" style={{ color: C.primaryDark }}>
+                <Text className="ml-2 text-sm font-semibold" style={{ color: C.primaryDark }}>
                   拍照
                 </Text>
               </TouchableOpacity>
@@ -279,7 +279,7 @@ export default function AddFoodPage() {
                   <>
                     <ActivityIndicator color="#fff" size="small" />
                     <Text
-                      className="ml-2.5 text-base font-bold text-white"
+                      className="ml-2.5 text-base font-semibold text-white"
                       allowFontScaling={false}
                       numberOfLines={1}
                       adjustsFontSizeToFit
@@ -289,7 +289,7 @@ export default function AddFoodPage() {
                   </>
                 ) : (
                   <Text
-                    className="text-base font-bold text-white"
+                    className="text-base font-semibold text-white"
                     allowFontScaling={false}
                     numberOfLines={1}
                     adjustsFontSizeToFit
@@ -333,7 +333,7 @@ export default function AddFoodPage() {
               disabled={saving}
             >
               <Text
-                className="text-base font-bold text-white"
+                className="text-base font-semibold text-white"
                 allowFontScaling={false}
                 numberOfLines={1}
                 adjustsFontSizeToFit
@@ -377,10 +377,10 @@ function ResultForm({
   return (
     <View className="mt-5 rounded-3xl p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
       <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-base font-bold" style={{ color: C.primaryDark }}>
+        <Text className="text-base font-semibold" style={{ color: C.primaryDark }}>
           识别结果
         </Text>
-        <Text className="text-xs font-bold px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }}>
+        <Text className="text-xs font-semibold px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }}>
           可信度 {(bio.confidence * 100).toFixed(0)}%
         </Text>
       </View>
@@ -415,7 +415,7 @@ function ResultForm({
         disabled={saving}
       >
         <Text
-          className="text-base font-bold text-white"
+          className="text-base font-semibold text-white"
           allowFontScaling={false}
           numberOfLines={1}
           adjustsFontSizeToFit

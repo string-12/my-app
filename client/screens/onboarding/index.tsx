@@ -136,7 +136,7 @@ export default function OnboardingPage() {
           keyboardShouldPersistTaps="handled"
         >
           <Text
-            className="text-2xl font-bold"
+            className="text-2xl font-semibold"
             style={{ color: C.primaryDark }}
             allowFontScaling={false}
           >
@@ -164,7 +164,13 @@ export default function OnboardingPage() {
                     setGoal(g.value);
                   }}
                 >
-                  <Text className="text-base font-bold" style={{ color: active ? '#fff' : C.text }}>
+                  <Text
+                    className="text-base font-semibold"
+                    style={{ color: active ? '#fff' : C.text }}
+                    allowFontScaling={false}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     {g.label}
                   </Text>
                   <Text
@@ -201,7 +207,13 @@ export default function OnboardingPage() {
                     setGender(g.v);
                   }}
                 >
-                  <Text className="text-base font-bold" style={{ color: active ? '#fff' : C.text }}>
+                  <Text
+                    className="text-base font-semibold"
+                    style={{ color: active ? '#fff' : C.text }}
+                    allowFontScaling={false}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     {g.l}
                   </Text>
                 </TouchableOpacity>
@@ -283,7 +295,7 @@ export default function OnboardingPage() {
             >
               <Text className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>每日推荐摄入</Text>
               <View className="flex-row items-end mt-1">
-                <Text className="text-4xl font-bold text-white" allowFontScaling={false}>
+                <Text className="text-4xl font-semibold text-white" allowFontScaling={false}>
                   {preview.calories}
                 </Text>
                 <Text className="text-sm mb-1.5 ml-2" style={{ color: 'rgba(255,255,255,0.8)' }}>kcal / 天</Text>
@@ -305,7 +317,7 @@ export default function OnboardingPage() {
                   { k: '脂肪', v: preview.fat },
                 ].map((m) => (
                   <View key={m.k} className="items-center">
-                    <Text className="text-lg font-bold text-white">{m.v}g</Text>
+                    <Text className="text-lg font-semibold text-white">{m.v}g</Text>
                     <Text className="text-[11px]" style={{ color: 'rgba(255,255,255,0.8)' }}>{m.k}</Text>
                   </View>
                 ))}
@@ -321,7 +333,7 @@ export default function OnboardingPage() {
             disabled={saving}
           >
             <Text
-              className="text-base font-bold text-white"
+              className="text-base font-semibold text-white"
               allowFontScaling={false}
               numberOfLines={1}
               adjustsFontSizeToFit
@@ -347,7 +359,7 @@ function shadow() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <Text className="mt-6 mb-3 text-sm font-bold" style={{ color: C.muted }}>
+    <Text className="mt-6 mb-3 text-sm font-semibold" style={{ color: C.muted }}>
       {children}
     </Text>
   );

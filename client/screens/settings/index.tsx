@@ -78,7 +78,7 @@ export default function SettingsScreen() {
           <FontAwesome6 name="arrow-left" size={18} color={C.text} />
         </TouchableOpacity>
         <Text
-          className="flex-1 text-center text-2xl font-bold"
+          className="flex-1 text-center text-2xl font-semibold"
           style={{ color: C.text }}
           allowFontScaling={false}
           numberOfLines={1}
@@ -110,7 +110,7 @@ export default function SettingsScreen() {
               <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: C.cardIconBg }}>
                 <FontAwesome6 name="robot" size={18} color={C.primary} />
               </View>
-              <Text className="text-lg font-bold" style={{ color: C.text }}>
+              <Text className="text-lg font-semibold" style={{ color: C.text }}>
                 选择模型
               </Text>
             </View>
@@ -156,7 +156,7 @@ export default function SettingsScreen() {
               <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: C.cardIconBg }}>
                 <FontAwesome6 name="key" size={18} color={C.primary} />
               </View>
-              <Text className="text-lg font-bold" style={{ color: C.text }}>
+              <Text className="text-lg font-semibold" style={{ color: C.text }}>
                 API Key
               </Text>
             </View>
@@ -195,7 +195,7 @@ export default function SettingsScreen() {
                 <FontAwesome6 name="sliders" size={18} color={C.primary} />
               </View>
               <View>
-                <Text className="text-base font-bold" style={{ color: C.text }}>
+                <Text className="text-base font-semibold" style={{ color: C.text }}>
                   修改目标与身体数据
                 </Text>
                 <Text className="mt-0.5 text-xs" style={{ color: C.muted }}>
@@ -221,7 +221,7 @@ export default function SettingsScreen() {
             }}
           >
             <Text
-              className="text-base font-bold"
+              className="text-base font-semibold"
               style={{ color: saving ? C.primary : '#FFFFFF' }}
               allowFontScaling={false}
               numberOfLines={1}
