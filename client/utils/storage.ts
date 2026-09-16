@@ -100,6 +100,22 @@ export async function addRecord(record: Omit<FoodRecord, 'id' | 'createdAt'>): P
   return full;
 }
 
+/** 批量添加记录，避免并发读写导致数据覆盖 */
+export async function addRecords(
+  records: Omit<FoodRecord, 'id' | 'createdAt'>[]
+): Promise<FoodRecord[]> {
+  const all = await readRecords();
+  const now = Date.now();
+  const fulls: FoodRecord[] = records.map((record, index) => ({
+    ...record,
+    id: makeId(),
+    createdAt: now + index,
+  }));
+  all.push(...fulls);
+  await writeRecords(all);
+  return fulls;
+}
+
 export async function deleteRecord(id: string): Promise<void> {
   const all = await readRecords();
   await writeRecords(all.filter((r) => r.id !== id));

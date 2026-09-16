@@ -20,7 +20,7 @@ import {
   type RecognizedFood,
   type RecognizedMeal,
 } from '@/screens/add-food/aiFoodRecognition';
-import { addRecord, dayKey, type FoodSource } from '@/utils/storage';
+import { addRecord, addRecords, dayKey, type FoodSource } from '@/utils/storage';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 
 type Tab = 'photo' | 'manual';
@@ -165,20 +165,18 @@ export default function AddFoodPage() {
     setSaving(true);
     try {
       const day = dayKey();
-      await Promise.all(
-        items.map((it) =>
-          addRecord({
-            name: it.name,
-            amountGram: it.amountGram,
-            calories: it.calories,
-            protein: it.protein,
-            carbs: it.carbs,
-            fat: it.fat,
-            source: 'photo-ai' as FoodSource,
-            day,
-            imageUri: imageUri ?? undefined,
-          })
-        )
+      await addRecords(
+        items.map((it) => ({
+          name: it.name,
+          amountGram: it.amountGram,
+          calories: it.calories,
+          protein: it.protein,
+          carbs: it.carbs,
+          fat: it.fat,
+          source: 'photo-ai' as FoodSource,
+          day,
+          imageUri: imageUri ?? undefined,
+        }))
       );
       Toast.show({ type: 'success', text1: `已保存 ${items.length} 条记录` });
       router.back();
@@ -271,8 +269,9 @@ export default function AddFoodPage() {
               <Image
                 className="w-full h-52 rounded-3xl mb-4"
                 style={{ backgroundColor: C.field }}
-                source={imageUri}
+                source={{ uri: imageUri }}
                 contentFit="cover"
+                cachePolicy="none"
               />
             ) : (
               <View className="w-full h-52 rounded-3xl overflow-hidden">
@@ -554,9 +553,10 @@ function EditableItemCard({
       {imageUri ? (
         <Image
           className="w-full h-28 rounded-2xl mb-4"
-          source={imageUri}
+          source={{ uri: imageUri }}
           contentFit="cover"
           style={{ backgroundColor: C.field }}
+          cachePolicy="none"
         />
       ) : null}
 
