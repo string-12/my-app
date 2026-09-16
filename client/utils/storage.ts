@@ -26,6 +26,14 @@ export interface Profile {
   weightKg: number;
   age: number;
   activityLabel: string;
+  /** 目标体重（kg），保持目标可不填 */
+  targetWeightKg?: number;
+  /** 预期达成周数，保持目标可不填 */
+  planWeeks?: number;
+  /** 每周体重变化（kg），正为增，负为减 */
+  weeklyRateKg: number;
+  /** 每日热量调整值（kcal） */
+  dailyAdjustment: number;
   calorieGoal: number;
   targets: { calories: number; protein: number; carbs: number; fat: number };
   updatedAt: number;
@@ -102,8 +110,7 @@ export interface DayTotals {
   fat: number;
 }
 
-export async function getDayTotals(day: string = dayKey()): Promise<DayTotals> {
-  const records = await getRecords(day);
+export function sumDayTotals(records: FoodRecord[]): DayTotals {
   return records.reduce<DayTotals>(
     (acc, r) => {
       acc.calories += r.calories;
@@ -114,6 +121,24 @@ export async function getDayTotals(day: string = dayKey()): Promise<DayTotals> {
     },
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );
+}
+
+export async function getDayTotals(day: string = dayKey()): Promise<DayTotals> {
+  const records = await getRecords(day);
+  return sumDayTotals(records);
+}
+
+/** 历史：获取所有有记录的日期（倒序） */
+export async function getRecordDays(): Promise<string[]> {
+  const all = await readRecords();
+  const days = Array.from(new Set(all.map((r) => r.day)));
+  return days.sort((a, b) => b.localeCompare(a));
+}
+
+/** 历史：获取某天的记录与汇总 */
+export async function getHistoryDay(day: string): Promise<{ records: FoodRecord[]; totals: DayTotals }> {
+  const records = await getRecords(day);
+  return { records, totals: sumDayTotals(records) };
 }
 
 /* ---------------- AI 模型设置 ---------------- */

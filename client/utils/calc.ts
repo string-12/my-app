@@ -40,24 +40,40 @@ export interface Targets {
   fat: number; // 克
 }
 
-/**
- * 依据身体数据 + 目标，计算每日推荐摄入热量与三大营养素目标。
- * @param params.body.gender 'male' | 'female'
- * @param params.body.heightCm 身高(cm)
- * @param params.body.weightKg 体重(kg)
- * @param params.body.age 年龄
- * @param params.activityFactor 活动系数
- * @param params.goal 'lose' | 'maintain' | 'gain'
- */
-export function calcTargets(params: {
+export interface CalcResult extends Targets {
+  bmr: number;
+  tdee: number;
+  weeklyRateKg: number; // 有符号：减脂为负，增重为正
+  dailyAdjustment: number; // 有符号：负数为缺口，正数为盈余
+}
+
+export interface CalcTargetsParams {
   gender: Gender;
   heightCm: number;
   weightKg: number;
   age: number;
   activityFactor: number;
   goal: Goal;
-}): Targets {
-  const { gender, heightCm, weightKg, age, activityFactor, goal } = params;
+  /** 目标体重（kg）。不填则使用默认周速率 */
+  targetWeightKg?: number;
+  /** 达成目标预期周数。不填则使用默认周速率 */
+  planWeeks?: number;
+}
+
+const KCAL_PER_KG_FAT = 7700;
+
+function getDefaultWeeklyRate(goal: Goal): number {
+  if (goal === 'lose') return -0.5; // 每周减 0.5 kg
+  if (goal === 'gain') return 0.3; // 每周增 0.3 kg
+  return 0;
+}
+
+/**
+ * 依据身体数据 + 目标（含目标体重/预期周期）计算每日推荐摄入。
+ * 减脂/增重的热量差基于 1kg 体脂 ≈ 7700 kcal 推导。
+ */
+export function calcTargets(params: CalcTargetsParams): CalcResult {
+  const { gender, heightCm, weightKg, age, activityFactor, goal, targetWeightKg, planWeeks } = params;
 
   // 1. 基础代谢率 BMR（Mifflin-St Jeor）
   const bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + (gender === 'male' ? 5 : -161);
@@ -65,11 +81,32 @@ export function calcTargets(params: {
   // 2. 每日总消耗 TDEE
   const tdee = bmr * activityFactor;
 
-  // 3. 按目标调整热量
-  const adjust = GOALS.find((g) => g.value === goal)?.adjust ?? 0;
-  const calories = Math.max(1200, Math.round((tdee + adjust) / 10) * 10);
+  // 3. 计算每周目标变化速率
+  let weeklyRateKg = getDefaultWeeklyRate(goal);
+  if (goal !== 'maintain' && targetWeightKg != null && planWeeks && planWeeks > 0) {
+    const diff = targetWeightKg - weightKg;
+    weeklyRateKg = diff / planWeeks;
+    // 避免用户把减脂填成增重或速率过激
+    if (goal === 'lose' && weeklyRateKg > 0) weeklyRateKg = -Math.abs(weeklyRateKg);
+    if (goal === 'gain' && weeklyRateKg < 0) weeklyRateKg = Math.abs(weeklyRateKg);
+  }
 
-  // 4. 三大营养素供能比例
+  // 4. 按目标调整热量
+  let calories = Math.round(tdee / 10) * 10;
+  let dailyAdjustment = 0;
+  if (goal !== 'maintain') {
+    dailyAdjustment = (weeklyRateKg * KCAL_PER_KG_FAT) / 7;
+    calories = Math.round((tdee + dailyAdjustment) / 10) * 10;
+    // 安全边界：不低于 BMR×0.9 且不低于 1200/1500 kcal；增重不超过 TDEE+1000
+    const minCalories = Math.max(Math.round(bmr * 0.9), gender === 'female' ? 1200 : 1500);
+    if (goal === 'lose') {
+      calories = Math.max(minCalories, Math.min(calories, Math.round(tdee) - 100));
+    } else {
+      calories = Math.min(Math.round(tdee) + 1000, Math.max(calories, Math.round(tdee) + 100));
+    }
+  }
+
+  // 5. 三大营养素供能比例
   let pPct = 0.25;
   let cPct = 0.45;
   let fPct = 0.3;
@@ -81,6 +118,10 @@ export function calcTargets(params: {
 
   const round = (n: number) => Math.round(n);
   return {
+    bmr,
+    tdee: Math.round(tdee),
+    weeklyRateKg,
+    dailyAdjustment: Math.round(dailyAdjustment),
     calories,
     protein: round((calories * pPct) / 4),
     carbs: round((calories * cPct) / 4),

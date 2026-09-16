@@ -179,14 +179,47 @@ export default function HomePage() {
           <MacroBar label="脂肪" color={C.fat} value={totals.fat} target={profile.targets.fat} />
         </View>
 
-        {/* 今日记录 */}
+        {/* 阶段计划 */}
+        {profile.goal !== 'maintain' && profile.targetWeightKg ? (
+          <View className="rounded-[24px] p-5 mt-6" style={{ backgroundColor: C.surface, ...shadow() }}>
+            <Text className="text-sm font-bold" style={{ color: C.muted }}>
+              阶段计划
+            </Text>
+            <View className="flex-row items-end justify-between mt-2">
+              <Text
+                className="text-lg font-bold"
+                style={{ color: C.text }}
+                allowFontScaling={false}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {profile.weightKg} kg → {profile.targetWeightKg} kg
+              </Text>
+              <Text className="text-xs mb-1" style={{ color: C.muted }}>
+                {profile.planWeeks} 周
+              </Text>
+            </View>
+            <Text className="mt-2 text-xs" style={{ color: C.muted }}>
+              每周{profile.weeklyRateKg > 0 ? '增' : '减'} {Math.abs(profile.weeklyRateKg).toFixed(2)} kg · 每日
+              {profile.dailyAdjustment > 0 ? '盈余' : '缺口'} {Math.abs(profile.dailyAdjustment)} kcal
+            </Text>
+          </View>
+        ) : null}
+
+        {/* 今日记录与历史入口 */}
         <View className="flex-row items-center justify-between mt-6 mb-3">
           <Text className="text-sm font-bold" style={{ color: C.muted }}>
             今日记录
           </Text>
-          <Text className="text-xs" style={{ color: C.muted }}>
-            {records.length} 条
-          </Text>
+          <TouchableOpacity
+            className="flex-row items-center"
+            onPress={() => router.navigate('/history')}
+          >
+            <Text className="text-xs font-semibold" style={{ color: C.primary }}>
+              历史记录
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={C.primary} />
+          </TouchableOpacity>
         </View>
 
         {records.length === 0 ? (

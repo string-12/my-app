@@ -36,6 +36,8 @@ export default function OnboardingPage() {
   const [weight, setWeight] = useState('');
   const [age, setAge] = useState('');
   const [activity, setActivity] = useState<ActivityLevel>('light');
+  const [targetWeight, setTargetWeight] = useState('');
+  const [planWeeks, setPlanWeeks] = useState('');
   const [saving, setSaving] = useState(false);
 
   // 实时预览计算结果
@@ -45,8 +47,19 @@ export default function OnboardingPage() {
     const a = Number(age);
     if (!h || !w || !a) return null;
     const factor = ACTIVITY_LEVELS.find((x) => x.value === activity)?.factor ?? 1.375;
-    return calcTargets({ gender, heightCm: h, weightKg: w, age: a, activityFactor: factor, goal });
-  }, [height, weight, age, activity, goal, gender]);
+    const tw = targetWeight ? Number(targetWeight) : undefined;
+    const pw = planWeeks ? Number(planWeeks) : undefined;
+    return calcTargets({
+      gender,
+      heightCm: h,
+      weightKg: w,
+      age: a,
+      activityFactor: factor,
+      goal,
+      targetWeightKg: tw,
+      planWeeks: pw,
+    });
+  }, [height, weight, age, activity, goal, gender, targetWeight, planWeeks]);
 
   const goalMeta = GOALS.find((g) => g.value === goal)!;
   const activityMeta = ACTIVITY_LEVELS.find((x) => x.value === activity)!;
@@ -63,6 +76,22 @@ export default function OnboardingPage() {
       Toast.show({ type: 'error', text1: '请输入合理的身体数据范围' });
       return;
     }
+    const tw = targetWeight ? Number(targetWeight) : undefined;
+    const pw = planWeeks ? Number(planWeeks) : undefined;
+    if (goal !== 'maintain') {
+      if (!tw || !pw) {
+        Toast.show({ type: 'error', text1: '请填写目标体重与预期周数' });
+        return;
+      }
+      if ((goal === 'lose' && tw >= w) || (goal === 'gain' && tw <= w)) {
+        Toast.show({ type: 'error', text1: '目标体重方向与所选目标不一致' });
+        return;
+      }
+      if (pw < 1 || pw > 104) {
+        Toast.show({ type: 'error', text1: '预期周数请填写 1-104 周' });
+        return;
+      }
+    }
     setSaving(true);
     const targets = calcTargets({
       gender,
@@ -71,6 +100,8 @@ export default function OnboardingPage() {
       age: a,
       activityFactor: activityMeta.factor,
       goal,
+      targetWeightKg: tw,
+      planWeeks: pw,
     });
     const profile: Profile = {
       goal,
@@ -80,6 +111,10 @@ export default function OnboardingPage() {
       weightKg: w,
       age: a,
       activityLabel: activityMeta.label,
+      targetWeightKg: tw,
+      planWeeks: pw,
+      weeklyRateKg: targets.weeklyRateKg,
+      dailyAdjustment: targets.dailyAdjustment,
       calorieGoal: targets.calories,
       targets,
       updatedAt: Date.now(),
@@ -182,6 +217,25 @@ export default function OnboardingPage() {
             <NumberField label="年龄" value={age} onChange={setAge} />
           </View>
 
+          {/* 目标体重与周期 */}
+          {goal !== 'maintain' ? (
+            <>
+              <SectionTitle>目标规划</SectionTitle>
+              <View className="flex-row gap-3">
+                <NumberField
+                  label={goal === 'lose' ? '目标体重 (kg)' : '目标体重 (kg)'}
+                  value={targetWeight}
+                  onChange={setTargetWeight}
+                />
+                <NumberField label="预期周数" value={planWeeks} onChange={setPlanWeeks} />
+              </View>
+              <Text className="mt-2 text-xs leading-5" style={{ color: C.muted }}>
+                系统将基于「当前体重 → 目标体重」和「预期周数」自动计算每日热量缺口/盈余。
+                不填则使用默认推荐速率（减脂每周 0.5kg，增重每周 0.3kg）。
+              </Text>
+            </>
+          ) : null}
+
           {/* 活动量 */}
           <SectionTitle>日常活动量</SectionTitle>
           <View className="gap-2">
@@ -234,6 +288,16 @@ export default function OnboardingPage() {
                 </Text>
                 <Text className="text-sm mb-1.5 ml-2" style={{ color: 'rgba(255,255,255,0.8)' }}>kcal / 天</Text>
               </View>
+              {goal !== 'maintain' ? (
+                <View className="mt-3 flex-row flex-wrap gap-x-4">
+                  <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    每周{preview.weeklyRateKg > 0 ? '增' : '减'} {Math.abs(preview.weeklyRateKg).toFixed(2)} kg
+                  </Text>
+                  <Text className="text-xs" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    每日{preview.dailyAdjustment > 0 ? '盈余' : '缺口'} {Math.abs(preview.dailyAdjustment)} kcal
+                  </Text>
+                </View>
+              ) : null}
               <View className="flex-row justify-between mt-4">
                 {[
                   { k: '蛋白质', v: preview.protein },

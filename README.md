@@ -268,11 +268,12 @@ import { Screen } from '../../../components/Screen';
 
 ### 功能一览
 
-- **目标设定（onboarding）**：选择「减脂 / 保持 / 增重」目标，填写性别、身高、体重、年龄、活动量，实时预览并保存每日热量与三大营养素推荐摄入（Mifflin-St Jeor 公式）。
+- **目标设定（onboarding）**：选择「减脂 / 保持 / 增重」目标，填写性别、身高、体重、年龄、活动量，并填写「目标体重 + 预期周数」，系统会基于 1kg 体脂 ≈ 7700 kcal 自动计算每日热量缺口/盈余与三大营养素推荐摄入（Mifflin-St Jeor 公式）。
 - **饮食记录（add-food）**：
   - **拍照识别**：拍摄或从相册选择食物照片 → 点击「AI 识别营养成分」→ 后端视觉大模型返回食物名称、分量与营养成分，可在保存前微调。
   - **手动输入**：填写食物名称与分量后，AI 会自动估算热量与三大营养素；也支持手动修改任意数值。
-- **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；下方展示今日记录列表，支持删除单条。
+- **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；展示阶段计划（当前体重 → 目标体重）；下方展示今日记录列表，支持删除单条。
+- **历史记录（history）**：按日期汇总所有饮食记录，点击日期可展开查看当日明细与营养素汇总，支持删除历史记录。
 - **AI 设置（settings）**：首页点击右上角设置图标，可自主选择 AI 模型并填写自己的 API Key；不填则使用系统默认模型。设置同样保存在 AsyncStorage。
 - **本地持久化**：用户目标、AI 设置与饮食记录均存入 AsyncStorage，无需后端数据库，重启不丢失。
 
@@ -311,12 +312,14 @@ client/
 │   ├── index.tsx           # 首页 = 每日进度仪表盘
 │   ├── add-food.tsx        # 记录一餐
 │   ├── onboarding.tsx      # 目标设定
-│   └── settings.tsx        # AI 设置
+│   ├── settings.tsx        # AI 设置
+│   └── history.tsx         # 历史记录
 ├── screens/
 │   ├── home/               # 仪表盘页面
 │   ├── add-food/           # 记录页面 + aiFoodRecognition.ts（AI 识别接入点）
 │   ├── onboarding/         # 目标设定页面
-│   └── settings/           # AI 设置页面
+│   ├── settings/           # AI 设置页面
+│   └── history/            # 历史记录页面
 ├── components/             # Screen / ProgressRing / MacroBar
 ├── utils/                  # calc.ts(热量计算) / storage.ts(AsyncStorage)
 └── constants/colors.ts     # 健康翡翠配色 tokens
