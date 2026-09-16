@@ -97,7 +97,11 @@ export default function HomePage() {
           <View className="w-20 h-20 rounded-3xl items-center justify-center mb-6" style={{ backgroundColor: `${C.primary}22` }}>
             <Ionicons name="leaf" size={40} color={C.primary} />
           </View>
-          <Text className="text-2xl font-extrabold text-center" style={{ color: C.primaryDark }}>
+          <Text
+            className="text-2xl font-bold text-center"
+            style={{ color: C.primaryDark }}
+            allowFontScaling={false}
+          >
             欢迎来到每日营养打卡
           </Text>
           <Text className="mt-3 text-sm text-center leading-6" style={{ color: C.muted }}>
@@ -108,7 +112,14 @@ export default function HomePage() {
             style={{ backgroundColor: C.primary, ...shadow() }}
             onPress={() => router.navigate('/onboarding')}
           >
-            <Text className="text-base font-bold text-white">开始设置目标 →</Text>
+            <Text
+              className="text-base font-bold text-white"
+              allowFontScaling={false}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              开始设置目标 →
+            </Text>
           </TouchableOpacity>
         </View>
       </Screen>
@@ -126,7 +137,13 @@ export default function HomePage() {
             <Text className="text-sm" style={{ color: C.muted }}>
               {today}
             </Text>
-            <Text className="text-xl font-extrabold mt-0.5" style={{ color: C.text }}>
+            <Text
+              className="text-xl font-bold mt-0.5"
+              style={{ color: C.text }}
+              allowFontScaling={false}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               今日摄入 · {profile.goalLabel}
             </Text>
           </View>

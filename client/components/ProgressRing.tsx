@@ -69,7 +69,7 @@ export default function ProgressRing({
           className="absolute inset-0 items-center justify-center"
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <Text className="text-5xl font-extrabold" style={{ color: C.primaryDark }}>
+          <Text className="text-5xl font-bold" style={{ color: C.primaryDark }} allowFontScaling={false}>
             {Math.round(value)}
           </Text>
           <Text className="mt-1 text-xs" style={{ color: C.muted }}>

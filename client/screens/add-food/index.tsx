@@ -178,7 +178,11 @@ export default function AddFoodPage() {
     <Screen statusBarStyle="dark" safeAreaEdges={['top', 'left', 'right']}>
       {/* 顶部标题 */}
       <View className="px-5 pt-2 pb-3">
-        <Text className="text-[26px] font-extrabold" style={{ color: C.primaryDark }}>
+        <Text
+          className="text-2xl font-bold"
+          style={{ color: C.primaryDark }}
+          allowFontScaling={false}
+        >
           记录一餐
         </Text>
       </View>
@@ -266,7 +270,7 @@ export default function AddFoodPage() {
             {/* AI 识别按钮 */}
             {imageUri && !bio ? (
               <TouchableOpacity
-                className="rounded-2xl py-4 items-center flex-row justify-center"
+                className="w-full rounded-2xl px-6 py-4 items-center flex-row justify-center"
                 style={{ backgroundColor: C.primary, ...shadow() }}
                 onPress={runAnalyze}
                 disabled={analyzing}
@@ -274,10 +278,22 @@ export default function AddFoodPage() {
                 {analyzing ? (
                   <>
                     <ActivityIndicator color="#fff" size="small" />
-                    <Text className="ml-2.5 text-base font-bold text-white">AI 正在识别营养成分…</Text>
+                    <Text
+                      className="ml-2.5 text-base font-bold text-white"
+                      allowFontScaling={false}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
+                      AI 正在识别营养成分…
+                    </Text>
                   </>
                 ) : (
-                  <Text className="text-base font-bold text-white">
+                  <Text
+                    className="text-base font-bold text-white"
+                    allowFontScaling={false}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                  >
                     AI 识别营养成分
                   </Text>
                 )}
@@ -311,12 +327,19 @@ export default function AddFoodPage() {
             <Field label="脂肪 (g)" value={mFat} onChange={(t) => setMFat(num(t))} placeholder="8" />
 
             <TouchableOpacity
-              className="mt-6 rounded-2xl py-4 items-center"
+              className="w-full mt-6 rounded-2xl px-6 py-4 items-center justify-center"
               style={{ backgroundColor: C.primaryDark, ...shadow() }}
               onPress={handleManualSave}
               disabled={saving}
             >
-              <Text className="text-base font-bold text-white">保存记录</Text>
+              <Text
+                className="text-base font-bold text-white"
+                allowFontScaling={false}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                保存记录
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -377,7 +400,7 @@ function ResultForm({
       <Field label="脂肪 (g)" value={fat} onChange={(t) => setFat(num(t))} />
 
       <TouchableOpacity
-        className="mt-4 rounded-2xl py-4 items-center"
+        className="w-full mt-4 rounded-2xl px-6 py-4 items-center justify-center"
         style={{ backgroundColor: C.primary, ...shadow() }}
         onPress={() =>
           onSave({
@@ -391,7 +414,14 @@ function ResultForm({
         }
         disabled={saving}
       >
-        <Text className="text-base font-bold text-white">保存这条识别</Text>
+        <Text
+          className="text-base font-bold text-white"
+          allowFontScaling={false}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          保存这条识别
+        </Text>
       </TouchableOpacity>
     </View>
   );

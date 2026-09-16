@@ -68,20 +68,25 @@ export default function SettingsScreen() {
   return (
     <Screen className="flex-1 bg-slate-50 px-5 pt-4">
       {/* Header */}
-      <View className="mb-6 flex-row items-center justify-between">
-        <View className="flex-row items-center gap-3">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white"
-            style={{ shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6 }}
-            activeOpacity={0.8}
-          >
-            <FontAwesome6 name="arrow-left" size={18} color={C.text} />
-          </TouchableOpacity>
-          <Text className="text-2xl font-extrabold" style={{ color: C.text }}>
-            AI 设置
-          </Text>
-        </View>
+      <View className="mb-6 flex-row items-center">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          className="h-10 w-10 items-center justify-center rounded-full bg-white"
+          style={{ shadowColor: C.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6 }}
+          activeOpacity={0.8}
+        >
+          <FontAwesome6 name="arrow-left" size={18} color={C.text} />
+        </TouchableOpacity>
+        <Text
+          className="flex-1 text-center text-2xl font-bold"
+          style={{ color: C.text }}
+          allowFontScaling={false}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
+          AI 设置
+        </Text>
+        <View className="h-10 w-10" />
       </View>
 
       <KeyboardAvoidingView
@@ -206,7 +211,7 @@ export default function SettingsScreen() {
             activeOpacity={0.85}
             onPress={handleSave}
             disabled={saving}
-            className="rounded-2xl py-4 items-center justify-center"
+            className="w-full rounded-2xl px-6 py-4 items-center justify-center"
             style={{
               backgroundColor: saving ? C.primaryLight : C.primary,
               shadowColor: C.shadow,
@@ -215,7 +220,13 @@ export default function SettingsScreen() {
               shadowRadius: 16,
             }}
           >
-            <Text className="text-base font-bold" style={{ color: saving ? C.primary : '#FFFFFF' }}>
+            <Text
+              className="text-base font-bold"
+              style={{ color: saving ? C.primary : '#FFFFFF' }}
+              allowFontScaling={false}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               {saving ? '保存中…' : '保存设置'}
             </Text>
           </TouchableOpacity>

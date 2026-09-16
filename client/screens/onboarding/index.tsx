@@ -100,7 +100,11 @@ export default function OnboardingPage() {
           contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Text className="text-[26px] font-extrabold" style={{ color: C.primaryDark }}>
+          <Text
+            className="text-2xl font-bold"
+            style={{ color: C.primaryDark }}
+            allowFontScaling={false}
+          >
             设定你的健康目标
           </Text>
           <Text className="mt-2 text-sm leading-5" style={{ color: C.muted }}>
@@ -225,7 +229,9 @@ export default function OnboardingPage() {
             >
               <Text className="text-sm font-semibold" style={{ color: 'rgba(255,255,255,0.8)' }}>每日推荐摄入</Text>
               <View className="flex-row items-end mt-1">
-                <Text className="text-4xl font-extrabold text-white">{preview.calories}</Text>
+                <Text className="text-4xl font-bold text-white" allowFontScaling={false}>
+                  {preview.calories}
+                </Text>
                 <Text className="text-sm mb-1.5 ml-2" style={{ color: 'rgba(255,255,255,0.8)' }}>kcal / 天</Text>
               </View>
               <View className="flex-row justify-between mt-4">
@@ -245,12 +251,17 @@ export default function OnboardingPage() {
 
           {/* 提交 */}
           <TouchableOpacity
-            className="mt-8 rounded-2xl py-4 items-center"
+            className="mt-8 w-full rounded-2xl px-6 py-4 items-center justify-center"
             style={{ backgroundColor: C.primaryDark, ...shadow() }}
             onPress={handleSave}
             disabled={saving}
           >
-            <Text className="text-base font-bold text-white">
+            <Text
+              className="text-base font-bold text-white"
+              allowFontScaling={false}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               {saving ? '保存中…' : '开始我的健康之旅 →'}
             </Text>
           </TouchableOpacity>
