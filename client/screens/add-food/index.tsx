@@ -301,7 +301,7 @@ export default function AddFoodPage() {
             ) : null}
 
             {/* 识别结果（可编辑） */}
-            {bio ? <ResultForm bio={bio} saving={saving} onSave={handleBioSave} /> : null}
+            {bio ? <ResultForm bio={bio} imageUri={imageUri ?? undefined} saving={saving} onSave={handleBioSave} /> : null}
           </View>
         ) : (
           <View>
@@ -353,10 +353,12 @@ const num = (t: string) => t.replace(/[^0-9.]/g, '');
 /** AI 识别结果编辑表单 */
 function ResultForm({
   bio,
+  imageUri,
   saving,
   onSave,
 }: {
   bio: RecognizedFood;
+  imageUri?: string;
   saving: boolean;
   onSave: (fields: {
     name: string;
@@ -374,30 +376,83 @@ function ResultForm({
   const [carbs, setCarbs] = useState(String(bio.carbs));
   const [fat, setFat] = useState(String(bio.fat));
 
+  // 用户是否手动修改过三大营养素/热量字段
+  const [macrosManuallyEdited, setMacrosManuallyEdited] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [amountTouched, setAmountTouched] = useState(false);
+  const [autoEstimating, setAutoEstimating] = useState(false);
+
+  // AI 识别结果：修改食物名称或重量后自动重新估算营养成分
+  useEffect(() => {
+    const n = name.trim();
+    const grams = Number(amount);
+    if (!n || !grams || grams <= 0) return;
+    if (!nameTouched && !amountTouched) return;
+    if (macrosManuallyEdited) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        setAutoEstimating(true);
+        const res = await estimateFoodNutrition(n, grams);
+        setCal(String(res.calories));
+        setProtein(String(res.protein));
+        setCarbs(String(res.carbs));
+        setFat(String(res.fat));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch {
+        // 估算失败时保留当前值，不覆盖
+      } finally {
+        setAutoEstimating(false);
+      }
+    }, 900);
+
+    return () => clearTimeout(timer);
+  }, [name, amount, nameTouched, amountTouched, macrosManuallyEdited]);
+
   return (
     <View className="mt-5 rounded-3xl p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
-      <View className="flex-row items-center justify-between mb-1">
-        <Text className="text-base pr-2" style={{ color: C.primaryDark }} allowFontScaling={false}>
-          识别结果
-        </Text>
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center flex-1">
+          {imageUri ? (
+            <Image
+              className="w-12 h-12 rounded-xl mr-3"
+              source={imageUri}
+              contentFit="cover"
+            />
+          ) : null}
+          <View className="flex-1">
+            <Text className="text-base pr-2" style={{ color: C.primaryDark }} allowFontScaling={false}>
+              识别结果
+            </Text>
+            <Text className="text-xs pr-2" style={{ color: C.muted }} allowFontScaling={false}>
+              可修改名称或重量，AI 会自动重算营养
+            </Text>
+          </View>
+        </View>
         <Text className="text-xs px-2 py-1 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}22` }} allowFontScaling={false}>
           可信度 {(bio.confidence * 100).toFixed(0)}%
         </Text>
       </View>
-      <Text className="text-xs mb-4" style={{ color: C.muted }}>
-        下方数据可手动微调后保存
-      </Text>
 
-      <Field label="食物名称 *" value={name} onChange={setName} />
+      <Field label="食物名称 *" value={name} onChange={(t) => { setName(t); setNameTouched(true); }} />
       <RowFields
-        left={{ label: '分量 (克)', value: amount, onChange: (t) => setAmount(num(t)) }}
-        right={{ label: '热量 (kcal) *', value: cal, onChange: (t) => setCal(num(t)) }}
+        left={{ label: '分量 (克)', value: amount, onChange: (t) => { setAmount(num(t)); setAmountTouched(true); } }}
+        right={{ label: '热量 (kcal) *', value: cal, onChange: (t) => { setCal(num(t)); setMacrosManuallyEdited(true); } }}
       />
       <RowFields
-        left={{ label: '蛋白质 (g)', value: protein, onChange: (t) => setProtein(num(t)) }}
-        right={{ label: '碳水 (g)', value: carbs, onChange: (t) => setCarbs(num(t)) }}
+        left={{ label: '蛋白质 (g)', value: protein, onChange: (t) => { setProtein(num(t)); setMacrosManuallyEdited(true); } }}
+        right={{ label: '碳水 (g)', value: carbs, onChange: (t) => { setCarbs(num(t)); setMacrosManuallyEdited(true); } }}
       />
-      <Field label="脂肪 (g)" value={fat} onChange={(t) => setFat(num(t))} />
+      <Field label="脂肪 (g)" value={fat} onChange={(t) => { setFat(num(t)); setMacrosManuallyEdited(true); }} />
+
+      {autoEstimating ? (
+        <View className="flex-row items-center mb-3">
+          <ActivityIndicator size="small" color={C.primary} />
+          <Text className="ml-2 text-sm" style={{ color: C.muted }}>
+            AI 正在根据新的名称/重量重新估算营养…
+          </Text>
+        </View>
+      ) : null}
 
       <TouchableOpacity
         className="w-full mt-4 rounded-2xl px-6 py-4 items-center justify-center"
