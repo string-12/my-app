@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 
 const PROFILE_KEY = '@nutrilog/profile';
 const RECORDS_KEY = '@nutrilog/records';
+const WATER_KEY = '@nutrilog/water';
 const SETTINGS_KEY = '@nutrilog/settings';
 
 export const dayKey = (d: Date | number = new Date()) => dayjs(d).format('YYYY-MM-DD');
@@ -36,6 +37,8 @@ export interface Profile {
   dailyAdjustment: number;
   calorieGoal: number;
   targets: { calories: number; protein: number; carbs: number; fat: number };
+  /** 每日饮水目标（ml），默认 2000 */
+  dailyWaterGoalMl: number;
   updatedAt: number;
 }
 
@@ -139,6 +142,62 @@ export async function getRecordDays(): Promise<string[]> {
 export async function getHistoryDay(day: string): Promise<{ records: FoodRecord[]; totals: DayTotals }> {
   const records = await getRecords(day);
   return { records, totals: sumDayTotals(records) };
+}
+
+/* ---------------- 饮水记录 ---------------- */
+
+export type WaterSource = 'photo-ai' | 'manual';
+
+export interface WaterRecord {
+  id: string;
+  day: string; // YYYY-MM-DD
+  createdAt: number;
+  amountMl: number;
+  source: WaterSource;
+  imageUri?: string;
+}
+
+async function readWater(): Promise<WaterRecord[]> {
+  try {
+    const raw = await AsyncStorage.getItem(WATER_KEY);
+    return raw ? (JSON.parse(raw) as WaterRecord[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writeWater(records: WaterRecord[]): Promise<void> {
+  await AsyncStorage.setItem(WATER_KEY, JSON.stringify(records));
+}
+
+export async function getWaterRecords(day: string = dayKey()): Promise<WaterRecord[]> {
+  const all = await readWater();
+  return all.filter((r) => r.day === day).sort((a, b) => b.createdAt - a.createdAt);
+}
+
+export async function addWaterRecord(record: Omit<WaterRecord, 'id' | 'createdAt'>): Promise<WaterRecord> {
+  const all = await readWater();
+  const full: WaterRecord = { ...record, id: makeId(), createdAt: Date.now() };
+  all.push(full);
+  await writeWater(all);
+  return full;
+}
+
+export async function deleteWaterRecord(id: string): Promise<void> {
+  const all = await readWater();
+  await writeWater(all.filter((r) => r.id !== id));
+}
+
+export async function getWaterTotal(day: string = dayKey()): Promise<number> {
+  const records = await getWaterRecords(day);
+  return records.reduce((sum, r) => sum + r.amountMl, 0);
+}
+
+/** 历史：获取所有有饮水记录的日期（倒序） */
+export async function getWaterRecordDays(): Promise<string[]> {
+  const all = await readWater();
+  const days = Array.from(new Set(all.map((r) => r.day)));
+  return days.sort((a, b) => b.localeCompare(a));
 }
 
 /* ---------------- AI 模型设置 ---------------- */

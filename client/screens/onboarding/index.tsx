@@ -117,6 +117,7 @@ export default function OnboardingPage() {
       dailyAdjustment: targets.dailyAdjustment,
       calorieGoal: targets.calories,
       targets,
+      dailyWaterGoalMl: 2000,
       updatedAt: Date.now(),
     };
     await saveProfile(profile);

@@ -39,6 +39,7 @@ export const C = {
   placeholder: '#9CA8A2',
   cardIconBg: 'rgba(14,165,105,0.12)',
   primaryLight: 'rgba(14,165,105,0.10)',
+  disabled: '#C5D3CB',
 };
 
 /** 营养素元数据 */

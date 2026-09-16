@@ -43,6 +43,15 @@ const ESTIMATE_SYSTEM_PROMPT = `你是一位专业的营养师。根据用户给
   "confidence": 置信度（0 到 1 之间的小数）
 }`;
 
+const WATER_ANALYZE_PROMPT = `你是一位视觉估算助手。请分析用户上传的饮品/水杯/水瓶照片，估算其中液体的体积。
+如果识别为普通饮用水，按纯水处理；如果是茶/咖啡/汤等，也按实际可饮用的毫升数估算。
+请只返回一个 JSON 对象，不要包含任何 Markdown 代码块或解释，字段如下：
+{
+  "amountMl": 饮品体积（整数毫升）,
+  "drinkType": "饮品类型（中文）",
+  "confidence": 置信度（0 到 1 之间的小数）
+}`;
+
 /** 兼容 LLM 可能包裹在 Markdown 代码块里的 JSON */
 function parseJsonFromLLM(content: string): unknown {
   const blockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
@@ -201,6 +210,61 @@ router.post('/estimate', express.json(), async (req, res) => {
     console.error('[/food/estimate] error:', err);
     res.status(500).json({
       error: 'AI 估算失败，请稍后重试',
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+/**
+ * POST /api/v1/water/analyze
+ * 上传水杯/水瓶照片，由多模态 LLM 估算饮品体积（ml）
+ */
+router.post('/water/analyze', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      res.status(400).json({ error: '请上传饮品照片' });
+      return;
+    }
+
+    const base64 = req.file.buffer.toString('base64');
+    const mime = req.file.mimetype || 'image/jpeg';
+    const dataUri = `data:${mime};base64,${base64}`;
+
+    const client = createClient(req);
+    const response = await client.invoke(
+      [
+        { role: 'system', content: WATER_ANALYZE_PROMPT },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: '请估算这杯/瓶饮品的大致毫升数。',
+            },
+            {
+              type: 'image_url',
+              image_url: { url: dataUri, detail: 'high' },
+            },
+          ],
+        },
+      ],
+      { model: resolveModel(req, true), temperature: 0.2 }
+    );
+
+    const data = parseJsonFromLLM(response.content);
+    if (typeof data !== 'object' || data === null || !('amountMl' in data)) {
+      throw new Error('LLM response missing amountMl');
+    }
+    const result = data as { amountMl: number; drinkType?: string; confidence?: number };
+    res.json({
+      amountMl: Math.max(0, Math.round(result.amountMl || 0)),
+      drinkType: result.drinkType || '水',
+      confidence: Math.min(Math.max(Number(result.confidence ?? 0.8), 0), 1),
+    });
+  } catch (err) {
+    console.error('[/water/analyze] error:', err);
+    res.status(500).json({
+      error: 'AI 识别失败，请手动输入饮水量',
       detail: err instanceof Error ? err.message : String(err),
     });
   }

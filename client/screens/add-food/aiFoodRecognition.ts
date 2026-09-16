@@ -78,3 +78,40 @@ export async function estimateFoodNutrition(
 
   return response.json();
 }
+
+/**
+ * 饮水识别结果。
+ * 后端 /api/v1/water/analyze 返回此结构。
+ */
+export interface RecognizedWater {
+  amountMl: number;
+  drinkType: string;
+  confidence: number;
+}
+
+/**
+ * 通过多模态 LLM 识别饮品照片并估算毫升数。
+ * 真实调用后端 /api/v1/water/analyze（multer 接收 image 字段）。
+ */
+export async function analyzeWaterImage(imageUri: string): Promise<RecognizedWater> {
+  if (!API_BASE) {
+    throw new Error('未配置后端地址（EXPO_PUBLIC_BACKEND_BASE_URL）');
+  }
+
+  const file = await createFormDataFile(imageUri, 'water.jpg', 'image/jpeg');
+  const formData = new FormData();
+  formData.append('image', file as unknown as Blob);
+
+  const response = await fetch(`${API_BASE}/api/v1/water/analyze`, {
+    method: 'POST',
+    headers: await getAIHeaders(),
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error || `识别失败 (${response.status})`);
+  }
+
+  return response.json();
+}

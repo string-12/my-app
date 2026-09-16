@@ -15,14 +15,19 @@ import { C } from '@/constants/colors';
 import { Screen } from '@/components/Screen';
 import ProgressRing from '@/components/ProgressRing';
 import MacroBar from '@/components/MacroBar';
+import WaterModal from '@/components/WaterModal';
 import {
   getProfile,
   getDayTotals,
   getRecords,
   deleteRecord,
+  getWaterTotal,
+  deleteWaterRecord,
+  getWaterRecords,
   Profile,
   FoodRecord,
   DayTotals,
+  WaterRecord,
   dayKey,
 } from '@/utils/storage';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
@@ -38,28 +43,39 @@ export default function HomePage() {
     fat: 0,
   });
   const [records, setRecords] = useState<FoodRecord[]>([]);
+  const [waterRecords, setWaterRecords] = useState<WaterRecord[]>([]);
+  const [waterTotal, setWaterTotal] = useState(0);
+  const [waterModalVisible, setWaterModalVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const [p, t, r, wt, wr] = await Promise.all([
+      getProfile(),
+      getDayTotals(),
+      getRecords(),
+      getWaterTotal(),
+      getWaterRecords(),
+    ]);
+    setProfile(p);
+    setTotals(t);
+    setRecords(r);
+    setWaterTotal(wt);
+    setWaterRecords(wr);
+    setToday(dayKey());
+    setLoaded(true);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
       (async () => {
-        const [p, t, r] = await Promise.all([
-          getProfile(),
-          getDayTotals(),
-          getRecords(),
-        ]);
+        await refresh();
         if (!active) return;
-        setProfile(p);
-        setTotals(t);
-        setRecords(r);
-        setToday(dayKey());
-        setLoaded(true);
       })();
       return () => {
         active = false;
       };
-    }, [])
+    }, [refresh])
   );
 
   const handleDelete = (id: string, name: string) => {
@@ -71,9 +87,7 @@ export default function HomePage() {
         onPress: async () => {
           await deleteRecord(id);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          const [t, r] = await Promise.all([getDayTotals(), getRecords()]);
-          setTotals(t);
-          setRecords(r);
+          await refresh();
         },
       },
     ]);
@@ -178,6 +192,75 @@ export default function HomePage() {
           <MacroBar label="蛋白质" color={C.protein} value={totals.protein} target={profile.targets.protein} />
           <MacroBar label="碳水" color={C.carbs} value={totals.carbs} target={profile.targets.carbs} />
           <MacroBar label="脂肪" color={C.fat} value={totals.fat} target={profile.targets.fat} />
+        </View>
+
+        {/* 今日饮水 */}
+        <Text className="text-sm mt-6 mb-3 px-1" style={{ color: C.muted }} allowFontScaling={false}>
+          今日饮水
+        </Text>
+        <View className="rounded-[24px] p-5" style={{ backgroundColor: C.surface, ...shadow() }}>
+          <View className="flex-row items-center justify-between mb-3">
+            <View>
+              <Text className="text-xs" style={{ color: C.muted }} allowFontScaling={false}>
+                已饮水 / 目标
+              </Text>
+              <Text className="text-2xl mt-0.5" style={{ color: C.primary }} allowFontScaling={false}>
+                {waterTotal}
+                <Text className="text-sm" style={{ color: C.muted }} allowFontScaling={false}>
+                  {' '}/ {profile.dailyWaterGoalMl || 2000} ml
+                </Text>
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setWaterModalVisible(true)}
+              className="flex-row items-center rounded-2xl px-4 py-2"
+              style={{ backgroundColor: C.primaryLight }}
+            >
+              <Ionicons name="add" size={18} color={C.primary} />
+              <Text className="ml-1 text-sm px-1" style={{ color: C.primary }} allowFontScaling={false}>
+                记录
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: C.track }}>
+            <View
+              className="h-full rounded-full"
+              style={{
+                backgroundColor: '#38BDF8',
+                width: `${Math.min(waterTotal / (profile.dailyWaterGoalMl || 2000), 1) * 100}%`,
+              }}
+            />
+          </View>
+          {waterRecords.length > 0 ? (
+            <View className="mt-4 gap-2">
+              {waterRecords.map((w) => (
+                <View key={w.id} className="flex-row items-center justify-between rounded-2xl px-3 py-2" style={{ backgroundColor: C.inputBg }}>
+                  <View className="flex-row items-center">
+                    <Ionicons name="water" size={16} color="#38BDF8" />
+                    <Text className="ml-2 text-sm px-1" style={{ color: C.text }} allowFontScaling={false}>
+                      {w.amountMl} ml
+                    </Text>
+                    {w.source === 'photo-ai' ? (
+                      <Text className="text-[10px] ml-2 px-1.5 py-0.5 rounded-full" style={{ color: C.primary, backgroundColor: `${C.primary}1c` }} allowFontScaling={false}>
+                        AI
+                      </Text>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      await deleteWaterRecord(w.id);
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      await refresh();
+                    }}
+                    className="w-8 h-8 rounded-full items-center justify-center"
+                    style={{ backgroundColor: `${C.danger}14` }}
+                  >
+                    <Ionicons name="trash-outline" size={15} color={C.danger} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         {/* 阶段计划 */}
@@ -290,6 +373,15 @@ export default function HomePage() {
           </View>
         )}
         </ScrollView>
+
+        <WaterModal
+          visible={waterModalVisible}
+          onClose={() => setWaterModalVisible(false)}
+          onSaved={async () => {
+            setWaterModalVisible(false);
+            await refresh();
+          }}
+        />
 
         {/* 底部添加按钮 */}
         <TouchableOpacity

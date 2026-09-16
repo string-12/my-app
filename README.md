@@ -272,14 +272,15 @@ import { Screen } from '../../../components/Screen';
 - **饮食记录（add-food）**：
   - **拍照识别**：拍摄或从相册选择食物照片 → 点击「AI 识别营养成分」→ 后端视觉大模型返回食物名称、分量与营养成分，可在保存前微调。
   - **手动输入**：填写食物名称与分量后，AI 会自动估算热量与三大营养素；也支持手动修改任意数值。
-- **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；展示阶段计划（当前体重 → 目标体重）；下方展示今日记录列表，支持删除单条。
+- **每日进度仪表盘（home）**：环形热量仪表盘 + 三大营养素进度条，展示今日完成度；展示阶段计划（当前体重 → 目标体重）；饮水进度条显示今日已饮水/目标；下方展示今日记录列表，支持删除单条。
 - **历史记录（history）**：按日期汇总所有饮食记录，点击日期可展开查看当日明细与营养素汇总，支持删除历史记录。
-- **AI 设置（settings）**：首页点击右上角设置图标，可自主选择 AI 模型并填写自己的 API Key；不填则使用系统默认模型。设置同样保存在 AsyncStorage。
+- **饮水记录**：首页点击「今日饮水」卡片的「记录」按钮，可手动输入毫升数，或拍照/选图由 AI 估算水量；支持快速 +100/200/500ml；饮水记录同样本地持久化，并在首页展示完成进度。
+- **AI 设置（settings）**：首页点击右上角设置图标，可自主选择 AI 模型、填写自己的 API Key，并设置每日饮水目标；不填 API Key 则使用系统默认模型。设置同样保存在 AsyncStorage。
 - **本地持久化**：用户目标、AI 设置与饮食记录均存入 AsyncStorage，无需后端数据库，重启不丢失。
 
 ### 技术说明
 
-- **AI 识别已接入真实多模态大模型**：后端 `server/src/routes/food.ts` 提供 `/api/v1/food/analyze`（图片识别）与 `/api/v1/food/estimate`（名称+重量估算）两个接口，分别调用支持图像输入的 LLM，返回结构化营养数据。
+- **AI 识别已接入真实多模态大模型**：后端 `server/src/routes/food.ts` 提供 `/api/v1/food/analyze`（食物图片识别）、`/api/v1/food/estimate`（名称+重量估算）与 `/api/v1/food/water/analyze`（饮品/水杯体积估算）三个接口，分别调用支持图像输入的 LLM，返回结构化数据。
 - **前端接入点**：`client/screens/add-food/aiFoodRecognition.ts` 负责图片 FormData 上传与文本估算请求。后续若需切换模型或增加缓存，只需修改后端路由与此前端文件。
 - **依赖技术栈**：React Native / Expo 54、Expo Router（Stack 导航）、AsyncStorage、react-native-svg、expo-image-picker、expo-haptics、tailwindcss(uniwind)、coze-coding-dev-sdk（后端 LLM SDK）。
 
@@ -301,7 +302,7 @@ import { Screen } from '../../../components/Screen';
 3. 手机安装 **Expo Go**（Android / iOS 应用商店均可下载），确保手机与电脑在同一局域网。
 4. 用 Expo Go 扫描终端显示的 **QR 码**，即可在手机上打开并体验 App。
    - 也支持 Web 预览：按终端提示按 `w`，或访问 `http://localhost:5000`。
-5. 首次进入会引导设定目标；之后可在首页右下角「＋」按钮记录一餐。
+5. 首次进入会引导设定目标；之后可在首页底部按钮记录一餐，点击「今日饮水」卡片记录饮水。
 
 ### 目录结构（核心）
 
@@ -320,7 +321,7 @@ client/
 │   ├── onboarding/         # 目标设定页面
 │   ├── settings/           # AI 设置页面
 │   └── history/            # 历史记录页面
-├── components/             # Screen / ProgressRing / MacroBar
+├── components/             # Screen / ProgressRing / MacroBar / WaterModal
 ├── utils/                  # calc.ts(热量计算) / storage.ts(AsyncStorage)
 └── constants/colors.ts     # 健康翡翠配色 tokens
 ```

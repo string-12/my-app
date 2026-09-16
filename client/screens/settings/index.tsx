@@ -8,30 +8,37 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome6, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import {
   getAISettings,
   saveAISettings,
+  getProfile,
+  saveProfile,
   AVAILABLE_MODELS,
   DEFAULT_AI_SETTINGS,
   type AISettings,
+  type Profile,
 } from '@/utils/storage';
 import { C } from '@/constants/colors';
 
 export default function SettingsScreen() {
   const router = useSafeRouter();
   const [settings, setSettings] = useState<AISettings>(DEFAULT_AI_SETTINGS);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [waterGoal, setWaterGoal] = useState('2000');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
 
   useEffect(() => {
-    getAISettings().then((s) => {
+    Promise.all([getAISettings(), getProfile()]).then(([s, p]) => {
       setSettings(s);
+      setProfile(p);
+      setWaterGoal(String(p?.dailyWaterGoalMl || 2000));
       setLoading(false);
     });
   }, []);
@@ -39,6 +46,10 @@ export default function SettingsScreen() {
   const handleSave = async () => {
     setSaving(true);
     await saveAISettings(settings);
+    if (profile) {
+      const goal = Math.max(500, Math.round(parseInt(waterGoal, 10) || 2000));
+      await saveProfile({ ...profile, dailyWaterGoalMl: goal });
+    }
     if (Platform.OS !== 'web') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
@@ -181,6 +192,39 @@ export default function SettingsScreen() {
             <Text className="mt-3 text-xs leading-5" style={{ color: C.muted }}>
               你的 API Key 只会保存在本机 AsyncStorage 中，不会上传到除 AI 服务以外的任何服务器。
             </Text>
+          </View>
+
+          {/* Water goal */}
+          <View
+            className="mb-5 rounded-3xl bg-white p-5"
+            style={{ shadowColor: C.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 }}
+          >
+            <View className="mb-4 flex-row items-center gap-3">
+              <View className="h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: C.cardIconBg }}>
+                <Ionicons name="water" size={18} color="#38BDF8" />
+              </View>
+              <Text className="text-base pr-2" style={{ color: C.text }} allowFontScaling={false}>
+                每日饮水目标
+              </Text>
+            </View>
+            <View
+              className="flex-row items-center rounded-xl px-4"
+              style={{ backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.inputBorder }}
+            >
+              <TextInput
+                className="flex-1 py-3 text-base"
+                style={{ color: C.text }}
+                keyboardType="number-pad"
+                value={waterGoal}
+                onChangeText={setWaterGoal}
+                placeholder="例如 2000"
+                placeholderTextColor={C.placeholder}
+                allowFontScaling={false}
+              />
+              <Text className="text-sm" style={{ color: C.muted }} allowFontScaling={false}>
+                ml
+              </Text>
+            </View>
           </View>
 
           {/* Goal edit shortcut */}
