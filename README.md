@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Expo App + Express.js
 
 ## 目录结构规范（严格遵循）
@@ -393,3 +394,6 @@ EXPO_PUBLIC_BACKEND_BASE_URL=https://你的后端地址 npx eas build -p android
 
 - `client/eas.json`：EAS Build 配置，已包含 `preview`（APK）和 `production`（AAB）两种构建配置。
 - `client/app.config.ts`：Expo 应用配置，已自动注入 `COZE_PROJECT_ID` 作为 EAS 项目 ID。
+=======
+# my-app
+>>>>>>> 587dd0ce2a2e61bd19d5aed6a02d7c41c8125959
