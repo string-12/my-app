@@ -1,8 +1,10 @@
 import { ExpoConfig, ConfigContext } from 'expo/config';
 
+const EAS_PROJECT_ID = '1aacc462-06b6-4003-9726-4aa7b600a97b';
+
 const appName = process.env.COZE_PROJECT_NAME || process.env.EXPO_PUBLIC_COZE_PROJECT_NAME || '应用';
-const projectId = process.env.COZE_PROJECT_ID || process.env.EXPO_PUBLIC_COZE_PROJECT_ID;
-const slugAppName = projectId ? `app${projectId}` : 'myapp';
+const projectId = process.env.COZE_PROJECT_ID || process.env.EXPO_PUBLIC_COZE_PROJECT_ID || EAS_PROJECT_ID;
+const slugAppName = process.env.COZE_PROJECT_ID ? `app${process.env.COZE_PROJECT_ID}` : 'myapp';
 
 export default ({ config }: ConfigContext): ExpoConfig => {
   return {
