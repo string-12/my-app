@@ -31,7 +31,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": `com.anonymous.x${projectId || '0'}`
+      "package": process.env.COZE_PROJECT_ID ? `com.anonymous.x${process.env.COZE_PROJECT_ID}` : 'com.anonymous.myapp'
     },
     "web": {
       "bundler": "metro",
